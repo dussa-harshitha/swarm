@@ -14,13 +14,14 @@ Allowed method values: run_tests, osv_lookup, secret_scan, sast_scan, license_ch
 Extract at most 12 claims. Do not invent claims that are not stated or strongly implied."""
 
 VALID_METHODS = {"run_tests", "osv_lookup", "secret_scan", "sast_scan",
-                 "license_check", "maintenance_stats", "llm_critique"}
+                 "license_check", "license_compat", "maintenance_stats", "llm_critique"}
 
 # Deterministic method rules: (regex on claim text) -> method. First match wins.
 METHOD_RULES = [
     (r"\btest(ed|s|ing)?\b|\bcoverage\b", "run_tests"),
     (r"vulnerab|\bcve\b|security advisor|no known (security )?issues", "osv_lookup"),
     (r"\bsecret|credential|api key|password", "secret_scan"),
+    (r"license.{0,20}(compatib|conflict|compliant)|dependenc.{0,20}licen[cs]e", "license_compat"),
     (r"\blicen[cs]e|\bmit\b|\bapache\b|\bgpl\b|\bbsd\b", "license_check"),
     (r"maintain|actively developed|active development|regular(ly)? updat", "maintenance_stats"),
     (r"secure cod|best practice|hardened", "sast_scan"),
@@ -30,12 +31,12 @@ SPDX_HINT = re.compile(r"\b(MIT|Apache-2\.0|Apache 2\.0|GPL-3\.0|GPLv3|BSD-3-Cla
 SPDX_NORM = {"apache 2.0": "Apache-2.0", "gplv3": "GPL-3.0"}
 
 # A mechanical method may only be used when the claim is actually ABOUT that thing.
-# Prevents nonsense verdicts like "easy to learn: REFUTED because tests failed".
 METHOD_FIT = {
     "run_tests": r"\btest(ed|s|ing)?\b|\bcoverage\b",
     "osv_lookup": r"vulnerab|\bcve\b|advisor|security issue",
     "secret_scan": r"secret|credential|api key|password",
     "license_check": r"licen[cs]e|\bmit\b|\bapache\b|\bgpl\b|\bbsd\b",
+    "license_compat": r"licen[cs]e|compatib|conflict|dependenc",
     "maintenance_stats": r"maintain|actively|active development|updat",
     "sast_scan": r"secure|security|best practice|hardened|safe",
 }
@@ -50,7 +51,7 @@ def resolve_method(text: str, proposed: str | None) -> str:
         fit = METHOD_FIT.get(proposed)
         if fit and re.search(fit, text, re.I):
             return proposed
-        return "llm_critique"   # proposed method doesn't fit the claim semantics
+        return "llm_critique"
     return "llm_critique"
 
 def _normalize(obj) -> list[dict]:
@@ -73,7 +74,7 @@ def _normalize(obj) -> list[dict]:
         if JUNK.match(t):
             return True
         words = [w for w in t.split() if not w.startswith("http")]
-        return len(words) < 1   # only pure-URL lines
+        return len(words) < 1
     out = []
     for it in items:
         if isinstance(it, dict) and it.get("text") and not is_junk(str(it["text"])):
@@ -120,7 +121,7 @@ async def extract_claims(repo: Path, llm, graph: ClaimGraph) -> None:
         claim = graph.add_claim(c["text"], ctype, c.get("source", "README"), method)
         claim.cost_tokens += per_claim
         spdx = c.get("spdx")
-        if not spdx and method == "license_check":
+        if not spdx and method in ("license_check", "license_compat"):
             m = SPDX_HINT.search(c["text"])
             if m:
                 spdx = SPDX_NORM.get(m.group(1).lower(), m.group(1))
@@ -140,26 +141,32 @@ async def extract_claims(repo: Path, llm, graph: ClaimGraph) -> None:
 
 
 # ---------------- Baseline claims ----------------
-# A trust audit always runs its mechanical checks - a silent README doesn't
-# get to opt out of scrutiny. Injected AFTER extraction; any method the README
-# already produced a claim for is skipped (no duplicates).
 BASELINE = [
     ("No known-vulnerable dependencies", "security", "osv_lookup"),
     ("No secrets committed to the repository", "security", "secret_scan"),
     ("No medium/high-severity static-analysis findings", "security", "sast_scan"),
     ("Repository is actively maintained", "provenance", "maintenance_stats"),
+    ("Dependency licenses are compatible with the project license", "license", "license_compat"),
 ]
 
 def inject_baseline(repo: Path, graph: ClaimGraph) -> None:
     existing_methods = {c.method for c in graph.claims()}
+    # sniff the README for a CLAIMED license so license_compat compares against it
+    claimed_spdx = None
+    m = SPDX_HINT.search(gather_docs(repo, 4000))
+    if m:
+        claimed_spdx = SPDX_NORM.get(m.group(1).lower(), m.group(1))
     for text, ctype, method in BASELINE:
         if method in existing_methods:
             continue
         c = graph.add_claim(text, ctype, "baseline-audit", method)
-        c.note = (c.note + " " if c.note else "") + "[baseline]"
-    # test-suite baseline only when the repo actually has tests
+        note = "[baseline]"
+        if method == "license_compat" and claimed_spdx:
+            note = f"spdx={claimed_spdx} " + note
+        c.note = (c.note + " " if c.note else "") + note
     if "run_tests" not in existing_methods:
         has_tests = (repo / "tests").exists() or list(repo.glob("**/test_*.py"))
         if has_tests:
             c = graph.add_claim("Test suite passes", "quality", "baseline-audit", "run_tests")
             c.note = "[baseline]"
+

@@ -2,7 +2,7 @@ import pathlib, pytest
 from app.verify.license import verify_license_claim, detect_license
 from app.verify.sandbox import run_tests
 from app.verify.secrets import scan_secrets, gitleaks_available
-from app.verify.osv import parse_python_deps, check_vulnerabilities
+from app.verify.osv import parse_requirements, check_vulnerabilities
 import httpx
 
 REPO = pathlib.Path("/tmp/swarm_sample_repo")
@@ -24,7 +24,7 @@ def test_secret_scan_clean_repo():
     assert r.status == "verified"
 
 def test_osv_parses_pinned_deps():
-    deps = parse_python_deps(REPO)
+    deps = parse_requirements(REPO)
     assert deps == [{"package": {"name": "requests", "ecosystem": "PyPI"}, "version": "2.19.0"}]
 
 @pytest.mark.asyncio

@@ -1,12 +1,12 @@
-﻿"""Build the seeded showcase repo: KNOWN planted problems, used for the
-guided-tour demo and as eval ground truth ("6 planted, 6 caught").
-Planted (announce honestly as seeded):
-  1. README claims MIT; LICENSE is GPL-3.0            -> license_check REFUTED
-  2. requests==2.19.0 + flask==0.12.2 pinned          -> osv_lookup REFUTED (real CVEs)
-  3. Fake AWS-style key in config/settings.py         -> secret_scan REFUTED
-  4. eval() + shell=True subprocess                   -> sast_scan REFUTED
-  5. README claims thoroughly tested; 1 test FAILS    -> run_tests REFUTED
-  6. README claims actively maintained (fresh commits)-> maintenance_stats VERIFIED
+﻿"""Build the seeded showcase repo 'PayLite' with KNOWN planted problems.
+Planted issues (announce honestly as seeded):
+  1. README claims MIT; LICENSE is GPL-3.0                 -> license_check REFUTED
+  2. poetry.lock transitive deps with real CVEs            -> osv_lookup REFUTED (transitive)
+  3. Fake AWS-style key in config/settings.py             -> secret_scan REFUTED
+  4. Python eval()+shell=True AND JS eval()+XSS           -> sast_scan REFUTED (bandit + semgrep)
+  5. README claims thoroughly tested; a test FAILS         -> run_tests REFUTED
+  6. GPL-3.0 dependency declared under (claimed) MIT       -> license_compat REFUTED
+  + README claims actively maintained (fresh commits)      -> maintenance_stats VERIFIED
 Usage: py scripts/make_showcase.py [dest]
 """
 import os, pathlib, shutil, subprocess, sys
@@ -23,12 +23,37 @@ A lightweight payment-processing helper library. Production-ready and secure.
 - **MIT licensed** - free for commercial use
 - Thoroughly tested with full coverage
 - No known vulnerabilities in our dependency chain
+- All dependency licenses are compatible with our MIT license
 - Actively maintained by the PayLite team
 """)
 (dest / "LICENSE").write_text(
     "                    GNU GENERAL PUBLIC LICENSE\n"
     "                       Version 3, 29 June 2007\n")
-(dest / "requirements.txt").write_text("requests==2.19.0\nflask==0.12.2\n")
+(dest / "requirements.txt").write_text("requests==2.19.0\nflask==0.12.2\ngpl-charting-lib==1.0\n")
+(dest / "poetry.lock").write_text("""[[package]]
+name = "requests"
+version = "2.19.0"
+
+[[package]]
+name = "urllib3"
+version = "1.24.1"
+
+[[package]]
+name = "flask"
+version = "0.12.2"
+
+[[package]]
+name = "jinja2"
+version = "2.10"
+
+[[package]]
+name = "werkzeug"
+version = "0.14.1"
+""")
+(dest / ".license-manifest.json").write_text(
+    '{"gpl-charting-lib": "GPL-3.0", "requests": "Apache-2.0", "flask": "BSD-3-Clause"}')
+(dest / "package.json").write_text(
+    '{"name":"paylite","version":"1.0.0","dependencies":{"express":"4.16.0","lodash":"4.17.4"}}')
 (dest / "paylite.py").write_text('''import subprocess
 
 def charge(amount, currency="INR"):
@@ -37,12 +62,24 @@ def charge(amount, currency="INR"):
     return {"status": "charged", "amount": amount, "currency": currency}
 
 def run_hook(user_command):
-    # planted: command injection pattern for bandit
-    return subprocess.run(user_command, shell=True, capture_output=True)
+    return subprocess.run(user_command, shell=True, capture_output=True)  # planted
 
 def parse_rule(rule_text):
-    # planted: eval on external input for bandit
-    return eval(rule_text)
+    return eval(rule_text)  # planted
+''')
+(dest / "server.js").write_text('''const express = require('express');
+const app = express();
+
+app.get('/run', (req, res) => {
+  const result = eval(req.query.expr);        // planted: eval on user input
+  res.send(String(result));
+});
+
+app.get('/page', (req, res) => {
+  res.send('<div>' + req.query.name + '</div>');  // planted: reflected XSS
+});
+
+app.listen(3000);
 ''')
 (dest / "config" / "settings.py").write_text(
     '# planted fake credential for gitleaks (random, not a real key)\n'
@@ -56,8 +93,7 @@ def test_charge_ok():
     assert charge(100)["status"] == "charged"
 
 def test_refund_supported():
-    # planted failing test: README says thoroughly tested; this fails
-    from paylite import refund
+    from paylite import refund   # planted: refund doesn't exist -> fails
     assert refund(100)["status"] == "refunded"
 ''')
 subprocess.run(["git", "init", "-q", str(dest)])
@@ -67,4 +103,4 @@ for i in range(6):
     (dest / "CHANGELOG.md").write_text(f"release {i}\n")
     subprocess.run(["git", "-C", str(dest), "add", "."], env=env)
     subprocess.run(["git", "-C", str(dest), "commit", "-qm", f"release {i}"], env=env)
-print(f"showcase repo at {dest}  (6 planted issues)")
+print(f"showcase repo at {dest}  (6 planted, transitive deps + JS + license conflict)")

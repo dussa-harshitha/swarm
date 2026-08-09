@@ -1,14 +1,15 @@
 {
-  "generated_at": 1786266252.117706,
+  "generated_at": 1786268038.3288114,
   "summary": {
-    "refuted": 5,
+    "unverifiable": 2,
+    "refuted": 6,
     "verified": 1
   },
-  "total_tokens": 180,
+  "total_tokens": 532,
   "claims": [
     {
-      "id": "c_b97d3f",
-      "text": "No known vulnerabilities in our dependency chain",
+      "id": "c_44712f",
+      "text": "No known vulnerabilities in our dependency chain.",
       "type": "security",
       "source": "README.md",
       "method": "osv_lookup",
@@ -16,19 +17,19 @@
       "confidence": 0.95,
       "evidence": [
         {
-          "id": "ev_9ac98c",
+          "id": "ev_3b388f",
           "kind": "cve",
-          "summary": "OSV: 18 known vulnerability match(es)",
-          "detail": "requests==2.19.0: GHSA-9hjg-9r4m-mvj7; requests==2.19.0: GHSA-9wx4-h78v-vm56; requests==2.19.0: GHSA-gc5v-m9x4-r6x2; requests==2.19.0: GHSA-j8r2-6x86-q33q; requests==2.19.0: GHSA-x84v-xcm2-53pg; requests==2.19.0: PYSEC-2018-28; requests==2.19.0: PYSEC-2023-74; requests==2.19.0: PYSEC-2026-1872",
-          "created_at": 1786266230.9835188
+          "summary": "OSV: 86 known vulnerability match(es) across 7 deps [poetry.lock (transitive) + package.json (direct)]",
+          "detail": "requests==2.19.0: GHSA-9hjg-9r4m-mvj7; requests==2.19.0: GHSA-9wx4-h78v-vm56; requests==2.19.0: GHSA-gc5v-m9x4-r6x2; requests==2.19.0: GHSA-j8r2-6x86-q33q; requests==2.19.0: GHSA-x84v-xcm2-53pg; requests==2.19.0: PYSEC-2018-28; requests==2.19.0: PYSEC-2023-74; requests==2.19.0: PYSEC-2026-1872; requests==2.19.0: PYSEC-2026-1873; requests==2.19.0: PYSEC-2026-2275",
+          "created_at": 1786268019.5042644
         }
       ],
-      "cost_tokens": 45,
-      "cost_seconds": 1.4835121631622314,
+      "cost_tokens": 42,
+      "cost_seconds": 1.742990255355835,
       "note": ""
     },
     {
-      "id": "c_9cf998",
+      "id": "c_900bcf",
       "text": "No secrets committed to the repository",
       "type": "security",
       "source": "baseline-audit",
@@ -37,19 +38,19 @@
       "confidence": 0.95,
       "evidence": [
         {
-          "id": "ev_4ad7cf",
+          "id": "ev_d93960",
           "kind": "scan",
           "summary": "gitleaks found 1 potential secret(s)",
           "detail": "generic-api-key@C:/tmp/paylite/config/settings.py:3",
-          "created_at": 1786266228.820659
+          "created_at": 1786268007.676587
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 0.5578434467315674,
+      "cost_seconds": 0.5210328102111816,
       "note": "[baseline]"
     },
     {
-      "id": "c_8df167",
+      "id": "c_48fe0f",
       "text": "No medium/high-severity static-analysis findings",
       "type": "security",
       "source": "baseline-audit",
@@ -58,41 +59,62 @@
       "confidence": 0.8,
       "evidence": [
         {
-          "id": "ev_a33c6f",
+          "id": "ev_734e9d",
           "kind": "scan",
-          "summary": "bandit: 2 medium/high finding(s)",
-          "detail": "B602@paylite.py:10; B307@paylite.py:14",
-          "created_at": 1786266229.5000067
+          "summary": "bandit: bandit: 2 medium/high finding(s) | semgrep: semgrep: 9 high/medium finding(s) across languages",
+          "detail": "bandit: B602@paylite.py:9; B307@paylite.py:12 || semgrep: detected-aws-access-key-id-value@settings.py:2; detected-aws-secret-access-key@settings.py:3; subprocess-shell-true@paylite.py:9; eval-detected@paylite.py:12; eval-detected@server.js:5",
+          "created_at": 1786268017.761274
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 0.6793477535247803,
+      "cost_seconds": 10.084686994552612,
       "note": "[baseline]"
     },
     {
-      "id": "c_4909ff",
+      "id": "c_f460eb",
       "text": "MIT licensed - free for commercial use",
       "type": "license",
-      "source": "requirements.txt",
+      "source": "README.md",
       "method": "license_check",
       "status": "refuted",
       "confidence": 0.92,
       "evidence": [
         {
-          "id": "ev_8faffc",
+          "id": "ev_9deeca",
           "kind": "file_match",
           "summary": "Claimed MIT but LICENSE is GPL-3.0",
           "detail": "",
-          "created_at": 1786266230.984538
+          "created_at": 1786268019.505291
         }
       ],
-      "cost_tokens": 45,
-      "cost_seconds": 0.0010192394256591797,
+      "cost_tokens": 42,
+      "cost_seconds": 0.0010266304016113281,
       "note": "spdx=MIT"
     },
     {
-      "id": "c_3848a3",
-      "text": "Thoroughly tested with full coverage",
+      "id": "c_be1ef4",
+      "text": "All dependency licenses are compatible with our MIT license.",
+      "type": "license",
+      "source": "README.md",
+      "method": "license_compat",
+      "status": "refuted",
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "id": "ev_275fbe",
+          "kind": "scan",
+          "summary": "License conflict: 1 copyleft dep(s) under a permissive project license",
+          "detail": "gpl-charting-lib is GPL-3.0 (copyleft) but project claims MIT",
+          "created_at": 1786268020.8670418
+        }
+      ],
+      "cost_tokens": 42,
+      "cost_seconds": 1.361750841140747,
+      "note": "spdx=MIT"
+    },
+    {
+      "id": "c_89a968",
+      "text": "Thoroughly tested with full coverage.",
       "type": "quality",
       "source": "README.md",
       "method": "run_tests",
@@ -100,20 +122,62 @@
       "confidence": 0.92,
       "evidence": [
         {
-          "id": "ev_401d3c",
+          "id": "ev_3fdb49",
           "kind": "test_log",
           "summary": "Test suite has failures (docker sandbox, network off)",
-          "detail": ".F\n=================================== FAILURES ===================================\n____________________________ test_refund_supported _____________________________\n\n    def test_refund_supported():\n        # planted failing test: README says thoroughly tested; this fails\n>       from paylite import refund\nE       ImportError: cannot import name 'refund' from 'paylite' (/repo/paylite.py)\n\ntests/test_paylite.py:10: ImportError\n=========================== short test summary info ============================\nFAILED tests/test_paylite.py::test_refund_supported - ImportError: cannot imp...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 0.11s\n",
-          "created_at": 1786266252.0319376
+          "detail": ".F\n=================================== FAILURES ===================================\n____________________________ test_refund_supported _____________________________\n\n    def test_refund_supported():\n>       from paylite import refund   # planted: refund doesn't exist -> fails\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       ImportError: cannot import name 'refund' from 'paylite' (/repo/paylite.py)\n\ntests/test_paylite.py:9: ImportError\n=========================== short test summary info ============================\nFAILED tests/test_paylite.py::test_refund_supported - ImportError: cannot imp...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 0.11s\n",
+          "created_at": 1786268031.1239069
         }
       ],
-      "cost_tokens": 45,
-      "cost_seconds": 21.046406269073486,
+      "cost_tokens": 42,
+      "cost_seconds": 10.25686502456665,
       "note": ""
     },
     {
-      "id": "c_c0c148",
-      "text": "Actively maintained by the PayLite team",
+      "id": "c_6e04db",
+      "text": "Production-ready and secure.",
+      "type": "quality",
+      "source": "README.md",
+      "method": "llm_critique",
+      "status": "unverifiable",
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "id": "ev_a10c77",
+          "kind": "llm_critique",
+          "summary": "The claim 'Production-ready and secure' is a subjective marketing statement without measurable criteria. The project's file tree shows technical infrastructure (tests, config files) but no concrete evidence of security audits or production deployment. README states it is MIT licensed and thoroughly tested with full coverage, which does not prove actual production readiness. [LLM verdict, confidence capped]",
+          "detail": "",
+          "created_at": 1786268034.2767036
+        }
+      ],
+      "cost_tokens": 123,
+      "cost_seconds": 3.152796745300293,
+      "note": ""
+    },
+    {
+      "id": "c_cb741d",
+      "text": "A lightweight payment-processing helper library.",
+      "type": "functional",
+      "source": "README.md",
+      "method": "llm_critique",
+      "status": "unverifiable",
+      "confidence": 0.0,
+      "evidence": [
+        {
+          "id": "ev_e2607d",
+          "kind": "llm_critique",
+          "summary": "The claim 'A lightweight payment-processing helper library' is subjective and marketing language (e.g., lightweight, production-ready, thoroughly tested) with no measurable criteria. The project's README describes it as MIT-licensed, commercial-use allowed, thoroughly tested, no known vulnerabilities, etc., but these are also non-quantitative claims. The file tree shows Python source files and a tests directory indicating some implementation code, but there is no manifest or documentation that directly quantifies the library's size (e.g., number of lines of code) or performance characteristics. Without specific metrics or evidence such as a size limit for the library, its test coverage numbers, or benchmark results, we cannot verify this marketing claim. [LLM verdict, confidence capped]",
+          "detail": "",
+          "created_at": 1786268038.275217
+        }
+      ],
+      "cost_tokens": 199,
+      "cost_seconds": 3.9985134601593018,
+      "note": ""
+    },
+    {
+      "id": "c_17db34",
+      "text": "Actively maintained by the PayLite team.",
       "type": "provenance",
       "source": "README.md",
       "method": "maintenance_stats",
@@ -121,15 +185,15 @@
       "confidence": 0.85,
       "evidence": [
         {
-          "id": "ev_28d0fa",
+          "id": "ev_c6a263",
           "kind": "scan",
           "summary": "Actively maintained",
           "detail": "last commit 0d ago; 6 commits in 90d; 6 sampled",
-          "created_at": 1786266252.117706
+          "created_at": 1786268038.3288114
         }
       ],
-      "cost_tokens": 45,
-      "cost_seconds": 0.08576846122741699,
+      "cost_tokens": 42,
+      "cost_seconds": 0.053594350814819336,
       "note": ""
     }
   ]
