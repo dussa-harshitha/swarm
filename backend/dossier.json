@@ -1,0 +1,136 @@
+{
+  "generated_at": 1786266252.117706,
+  "summary": {
+    "refuted": 5,
+    "verified": 1
+  },
+  "total_tokens": 180,
+  "claims": [
+    {
+      "id": "c_b97d3f",
+      "text": "No known vulnerabilities in our dependency chain",
+      "type": "security",
+      "source": "README.md",
+      "method": "osv_lookup",
+      "status": "refuted",
+      "confidence": 0.95,
+      "evidence": [
+        {
+          "id": "ev_9ac98c",
+          "kind": "cve",
+          "summary": "OSV: 18 known vulnerability match(es)",
+          "detail": "requests==2.19.0: GHSA-9hjg-9r4m-mvj7; requests==2.19.0: GHSA-9wx4-h78v-vm56; requests==2.19.0: GHSA-gc5v-m9x4-r6x2; requests==2.19.0: GHSA-j8r2-6x86-q33q; requests==2.19.0: GHSA-x84v-xcm2-53pg; requests==2.19.0: PYSEC-2018-28; requests==2.19.0: PYSEC-2023-74; requests==2.19.0: PYSEC-2026-1872",
+          "created_at": 1786266230.9835188
+        }
+      ],
+      "cost_tokens": 45,
+      "cost_seconds": 1.4835121631622314,
+      "note": ""
+    },
+    {
+      "id": "c_9cf998",
+      "text": "No secrets committed to the repository",
+      "type": "security",
+      "source": "baseline-audit",
+      "method": "secret_scan",
+      "status": "refuted",
+      "confidence": 0.95,
+      "evidence": [
+        {
+          "id": "ev_4ad7cf",
+          "kind": "scan",
+          "summary": "gitleaks found 1 potential secret(s)",
+          "detail": "generic-api-key@C:/tmp/paylite/config/settings.py:3",
+          "created_at": 1786266228.820659
+        }
+      ],
+      "cost_tokens": 0,
+      "cost_seconds": 0.5578434467315674,
+      "note": "[baseline]"
+    },
+    {
+      "id": "c_8df167",
+      "text": "No medium/high-severity static-analysis findings",
+      "type": "security",
+      "source": "baseline-audit",
+      "method": "sast_scan",
+      "status": "refuted",
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "id": "ev_a33c6f",
+          "kind": "scan",
+          "summary": "bandit: 2 medium/high finding(s)",
+          "detail": "B602@paylite.py:10; B307@paylite.py:14",
+          "created_at": 1786266229.5000067
+        }
+      ],
+      "cost_tokens": 0,
+      "cost_seconds": 0.6793477535247803,
+      "note": "[baseline]"
+    },
+    {
+      "id": "c_4909ff",
+      "text": "MIT licensed - free for commercial use",
+      "type": "license",
+      "source": "requirements.txt",
+      "method": "license_check",
+      "status": "refuted",
+      "confidence": 0.92,
+      "evidence": [
+        {
+          "id": "ev_8faffc",
+          "kind": "file_match",
+          "summary": "Claimed MIT but LICENSE is GPL-3.0",
+          "detail": "",
+          "created_at": 1786266230.984538
+        }
+      ],
+      "cost_tokens": 45,
+      "cost_seconds": 0.0010192394256591797,
+      "note": "spdx=MIT"
+    },
+    {
+      "id": "c_3848a3",
+      "text": "Thoroughly tested with full coverage",
+      "type": "quality",
+      "source": "README.md",
+      "method": "run_tests",
+      "status": "refuted",
+      "confidence": 0.92,
+      "evidence": [
+        {
+          "id": "ev_401d3c",
+          "kind": "test_log",
+          "summary": "Test suite has failures (docker sandbox, network off)",
+          "detail": ".F\n=================================== FAILURES ===================================\n____________________________ test_refund_supported _____________________________\n\n    def test_refund_supported():\n        # planted failing test: README says thoroughly tested; this fails\n>       from paylite import refund\nE       ImportError: cannot import name 'refund' from 'paylite' (/repo/paylite.py)\n\ntests/test_paylite.py:10: ImportError\n=========================== short test summary info ============================\nFAILED tests/test_paylite.py::test_refund_supported - ImportError: cannot imp...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 0.11s\n",
+          "created_at": 1786266252.0319376
+        }
+      ],
+      "cost_tokens": 45,
+      "cost_seconds": 21.046406269073486,
+      "note": ""
+    },
+    {
+      "id": "c_c0c148",
+      "text": "Actively maintained by the PayLite team",
+      "type": "provenance",
+      "source": "README.md",
+      "method": "maintenance_stats",
+      "status": "verified",
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "id": "ev_28d0fa",
+          "kind": "scan",
+          "summary": "Actively maintained",
+          "detail": "last commit 0d ago; 6 commits in 90d; 6 sampled",
+          "created_at": 1786266252.117706
+        }
+      ],
+      "cost_tokens": 45,
+      "cost_seconds": 0.08576846122741699,
+      "note": ""
+    }
+  ]
+}

@@ -1,6 +1,4 @@
-"""SWARM orchestration server: start audits, stream events, fetch dossiers.
-NOTE: fresh-built minimal server. The spec assumed porting the team's prior
-FastAPI infra (JWT etc.) — that codebase was not provided; see BUILD_STATUS.md."""
+﻿"""SWARM orchestration server: start audits, stream events, fetch dossiers."""
 import asyncio, os, uuid, json
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
@@ -10,7 +8,7 @@ from .graph.claim_graph import ClaimGraph
 from .graph.store import GraphStore
 from .orchestrator.loop import run_audit, Budget
 from .orchestrator.actions import ActionContext
-from .agents.extractor import extract_claims
+from .agents.extractor import extract_claims, inject_baseline
 from .ingest.repo import clone
 from .llm.router import Router, MockLLM, OllamaLLM, WatsonxLLM, LLMError
 
@@ -28,7 +26,7 @@ def build_llm():
             return Router(primary)
     if mode == "ollama":
         return Router(OllamaLLM())
-    # mock default: refuses roles it has no script for — honest, not fake
+    # mock default: refuses roles it has no script for - honest, not fake
     return Router(MockLLM(script=json.loads(os.getenv("SWARM_MOCK_SCRIPT", "{}"))))
 
 class AuditRequest(BaseModel):
@@ -40,12 +38,16 @@ async def start_audit(req: AuditRequest):
     graph = ClaimGraph()
     RUNS[run_id] = graph
     async def job():
-        repo = clone(req.repo)
-        llm = build_llm()
-        ctx = ActionContext(repo, llm)
-        await extract_claims(repo, llm, graph)
-        await run_audit(graph, ctx, Budget())
-        await store.save(run_id, req.repo, graph)
+        try:
+            repo = clone(req.repo)
+            llm = build_llm()
+            ctx = ActionContext(repo, llm)
+            await extract_claims(repo, llm, graph)
+            inject_baseline(repo, graph)
+            await run_audit(graph, ctx, Budget())
+            await store.save(run_id, req.repo, graph)
+        except Exception as e:
+            graph._event("job_error", "-", {"note": f"{type(e).__name__}: {str(e)[:300]}"})
     asyncio.create_task(job())
     return {"run_id": run_id}
 
@@ -74,4 +76,4 @@ async def dossier(run_id: str):
 
 @app.get("/")
 async def index():
-    return HTMLResponse((Path(__file__).parent / "static_index.html").read_text())
+    return HTMLResponse((Path(__file__).parent / "static_index.html").read_text(encoding="utf-8"))

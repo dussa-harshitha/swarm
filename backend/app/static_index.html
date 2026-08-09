@@ -1,23 +1,89 @@
-<!doctype html><html><head><meta charset="utf8"><title>SWARM</title>
+<!doctype html><html><head><meta charset="utf8"><title>SWARM — Software Trust Auditor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-body{font-family:system-ui;margin:2rem;background:#fff;color:#0f172a;max-width:900px}
-h1{color:#059669}input{width:26rem;padding:.5rem}button{padding:.5rem 1rem;background:#059669;color:#fff;border:0;border-radius:6px}
-.claim{border-left:4px solid #94a3b8;padding:.4rem .8rem;margin:.4rem 0;background:#f8fafc}
-.verified{border-color:#059669}.refuted{border-color:#dc2626}.unverifiable{border-color:#d97706}
-.log{font-family:monospace;font-size:.8rem;color:#64748b;max-height:14rem;overflow:auto;background:#f1f5f9;padding:.6rem;margin-top:1rem}
-</style></head><body>
-<h1>SWARM — Software Trust Auditor</h1>
-<p><em>Placeholder dashboard. The React claim-graph view is Jahnavi's module (see BUILD_STATUS.md).</em></p>
-<input id=repo placeholder="repo URL or local path"><button onclick="go()">Audit</button>
-<div id=claims></div><div class=log id=log></div>
+:root{--ink:#0F172A;--gray:#64748B;--faint:#F1F5F9;--line:#E2E8F0;--em:#059669;--emsoft:#D1FAE5;--red:#DC2626;--redsoft:#FEE2E2;--amb:#D97706;--ambsoft:#FEF3C7;--blu:#2563EB}
+*{box-sizing:border-box}body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#fff;color:var(--ink)}
+.wrap{max-width:1060px;margin:0 auto;padding:2rem 1.5rem}
+h1{font-size:1.9rem;margin:0}.tag{color:var(--em);font-weight:700;letter-spacing:.12em;font-size:.72rem;text-transform:uppercase}
+.sub{color:var(--gray);margin:.35rem 0 1.4rem;font-size:.95rem}
+.bar{display:flex;gap:.6rem;margin-bottom:1.4rem}
+input{flex:1;padding:.7rem .9rem;border:1px solid var(--line);border-radius:10px;font-size:.95rem;outline:none}
+input:focus{border-color:var(--em)}
+button{padding:.7rem 1.4rem;background:var(--em);color:#fff;border:0;border-radius:10px;font-weight:700;font-size:.95rem;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+.chips{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.chip{padding:.3rem .8rem;border-radius:99px;font-size:.8rem;font-weight:700;background:var(--faint);color:var(--gray)}
+.chip.v{background:var(--emsoft);color:var(--em)}.chip.r{background:var(--redsoft);color:var(--red)}.chip.u{background:var(--ambsoft);color:var(--amb)}
+.chip.cost{background:#EFF6FF;color:var(--blu)}
+.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:1.2rem}
+@media(max-width:820px){.cols{grid-template-columns:1fr}}
+.claim{border:1px solid var(--line);border-left:5px solid var(--gray);border-radius:10px;padding:.7rem .9rem;margin-bottom:.6rem;background:#fff;transition:border-color .3s}
+.claim.verified{border-left-color:var(--em)}.claim.refuted{border-left-color:var(--red);background:#FEF7F7}.claim.unverifiable{border-left-color:var(--amb)}.claim.checking{border-left-color:var(--blu)}
+.claim b{font-size:.93rem}.meta{color:var(--gray);font-size:.78rem;margin-top:.2rem}
+.st{font-weight:800;text-transform:uppercase;font-size:.72rem;letter-spacing:.06em}
+.st.verified{color:var(--em)}.st.refuted{color:var(--red)}.st.unverifiable{color:var(--amb)}.st.checking{color:var(--blu)}
+.ev{margin-top:.45rem;font-size:.8rem;color:var(--ink);background:var(--faint);border-radius:8px;padding:.45rem .6rem;display:none;white-space:pre-wrap;word-break:break-word}
+.claim.open .ev{display:block}
+.logbox{border:1px solid var(--line);border-radius:10px;padding:.7rem;max-height:460px;overflow:auto;background:#0F172A}
+.logbox div{font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:#94A3B8;padding:.12rem 0;border-bottom:1px solid #1E293B}
+.logbox .k{color:#34D399;font-weight:700}
+h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gray);margin:.2rem 0 .6rem}
+.footer{margin-top:1.6rem;color:var(--gray);font-size:.8rem;text-align:center}
+</style></head><body><div class="wrap">
+<div class="tag">HackVerse 2.0 · IBM Granite · watsonx.ai</div>
+<h1>SWARM <span style="color:var(--em)">— Software Trust Auditor</span></h1>
+<p class="sub">Point it at any public repository. Every claim proven or broken by execution — nothing ships unverified.</p>
+<div class="bar">
+  <input id="repo" placeholder="https://github.com/owner/repo  (or a local path)" onkeydown="if(event.key==='Enter')go()">
+  <button id="btn" onclick="go()">Audit</button>
+</div>
+<div class="chips" id="chips" style="display:none">
+  <span class="chip v" id="cv">verified 0</span><span class="chip r" id="cr">refuted 0</span>
+  <span class="chip u" id="cu">unverifiable 0</span><span class="chip cost" id="ct">0 tokens</span>
+  <span class="chip" id="cw">0s</span>
+</div>
+<div class="cols">
+  <div><h3>Claim graph</h3><div id="claims"><div class="meta">Run an audit to watch the swarm work.</div></div></div>
+  <div><h3>Agent action log</h3><div class="logbox" id="log"></div></div>
+</div>
+<div class="footer">The swarm doesn't just generate. It proves. · Granite-4-H-Small + Granite-8B-Code on watsonx.ai · local fallback via Ollama</div>
+</div>
 <script>
+let t0, timer, runId=null;
+const $=id=>document.getElementById(id);
+function logline(ev){
+  const d=document.createElement('div');
+  d.innerHTML=`<span class="k">${ev.kind}</span> ${ev.claim||''} ${ev.status||''} ${ev.confidence??''} ${ev.method||''} ${ev.rel?('via '+ev.rel):''}${ev.note?(' — '+ev.note):''}${ev.raw?(' raw: '+ev.raw):''}`;
+  $('log').prepend(d);
+}
+async function refresh(){
+  if(!runId) return;
+  try{
+    const d=await(await fetch(`/runs/${runId}/dossier`)).json();
+    const s=d.summary||{};
+    $('cv').textContent=`verified ${s.verified||0}`; $('cr').textContent=`refuted ${s.refuted||0}`;
+    $('cu').textContent=`unverifiable ${s.unverifiable||0}`; $('ct').textContent=`${d.total_tokens||0} tokens`;
+    $('claims').innerHTML=d.claims.map(c=>{
+      const ev=(c.evidence&&c.evidence[0])?c.evidence[0].summary+(c.evidence[0].detail?'\n'+c.evidence[0].detail.slice(0,600):''):'';
+      return `<div class="claim ${c.status}" onclick="this.classList.toggle('open')">
+        <span class="st ${c.status}">${c.status}</span> &nbsp;<b>${c.text.replace(/</g,'&lt;').slice(0,140)}</b>
+        <div class="meta">confidence ${c.confidence.toFixed(2)} · method ${c.method} · ${c.type} · click for evidence</div>
+        <div class="ev">${(ev||'no evidence attached').replace(/</g,'&lt;')}</div></div>`;
+    }).join('');
+  }catch(e){}
+}
 async function go(){
- const r=await fetch('/audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repo:document.getElementById('repo').value})});
- const {run_id}=await r.json();
- const es=new EventSource(`/runs/${run_id}/events`);
- es.onmessage=async e=>{const ev=JSON.parse(e.data);
-  document.getElementById('log').innerHTML+=`<div>${ev.kind} ${ev.claim||''} ${ev.status||''} ${ev.confidence??''}</div>`;
-  if(ev.kind==='done'){es.close();const d=await(await fetch(`/runs/${run_id}/dossier`)).json();
-   document.getElementById('claims').innerHTML=d.claims.map(c=>`<div class="claim ${c.status}"><b>${c.text}</b><br>${c.status} · conf ${c.confidence.toFixed(2)} · ${c.method}<br><small>${(c.evidence[0]||{}).summary||''}</small></div>`).join('');}}
+  const repo=$('repo').value.trim(); if(!repo) return;
+  $('btn').disabled=true; $('chips').style.display='flex'; $('log').innerHTML=''; runId=null;
+  t0=Date.now(); timer=setInterval(()=>{$('cw').textContent=Math.round((Date.now()-t0)/1000)+'s'},500);
+  const r=await fetch('/audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repo})});
+  const j=await r.json(); runId=j.run_id;
+  const es=new EventSource(`/runs/${runId}/events`);
+  es.onmessage=async e=>{
+    const ev=JSON.parse(e.data); logline(ev);
+    if(ev.kind==='claim_updated'||ev.kind==='claim_added') refresh();
+    if(ev.kind==='done'){es.close();clearInterval(timer);$('btn').disabled=false;refresh();}
+  };
+  es.onerror=()=>{clearInterval(timer);$('btn').disabled=false;};
 }
 </script></body></html>

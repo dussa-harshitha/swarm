@@ -28,7 +28,7 @@ class OllamaLLM:
         model = self.small if tier == "small" else self.micro
         async with httpx.AsyncClient(timeout=180) as c:
             r = await c.post(f"{self.base}/api/chat", json={
-                "model": model, "stream": False,
+                "model": model, "stream": False, "format": "json",
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]})
             r.raise_for_status()
             obj = r.json()
@@ -71,6 +71,19 @@ class WatsonxLLM:
                       "messages": [{"role": "system", "content": system},
                                    {"role": "user", "content": user}],
                       "max_tokens": 2000})
+            if r.status_code in (400, 404):
+                # Some catalog models are generation-only (no /chat support).
+                r2 = await c.post(
+                    f"{self.url}/ml/v1/text/generation?version=2024-05-31",
+                    headers={"Authorization": f"Bearer {tok}"},
+                    json={"model_id": model, "project_id": self.project,
+                          "input": f"{system}\n\n{user}\n\nJSON response:",
+                          "parameters": {"max_new_tokens": 2000, "decoding_method": "greedy"}})
+                r2.raise_for_status()
+                obj2 = r2.json()
+                text = obj2["results"][0]["generated_text"]
+                toks = obj2["results"][0].get("generated_token_count", len(text) // 4)
+                return text, toks
             r.raise_for_status()
             obj = r.json()
         choice = obj["choices"][0]["message"]["content"]

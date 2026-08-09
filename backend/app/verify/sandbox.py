@@ -26,7 +26,8 @@ def run_pytest_docker(repo: Path, timeout: int = 420) -> VerifyResult:
         "docker", "run", "--rm",
         "-v", f"{vol}:/venv", "-v", f"{repo}:/repo:ro", "-w", "/repo", IMAGE, "sh", "-c",
         "python -m venv /venv && /venv/bin/pip install -q pytest && "
-        "([ -f requirements.txt ] && /venv/bin/pip install -q -r requirements.txt || true)",
+        "([ -f requirements.txt ] && /venv/bin/pip install -q -r requirements.txt || true) && "
+        "([ -f pyproject.toml ] || [ -f setup.py ] && /venv/bin/pip install -q -e . || true)",
     ]
     test_cmd = [
         "docker", "run", "--rm", "--network", "none", "--memory", "512m", "--cpus", "1",
