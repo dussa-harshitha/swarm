@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf8"><title>SWARM</title>
+<style>
+body{font-family:system-ui;margin:2rem;background:#fff;color:#0f172a;max-width:900px}
+h1{color:#059669}input{width:26rem;padding:.5rem}button{padding:.5rem 1rem;background:#059669;color:#fff;border:0;border-radius:6px}
+.claim{border-left:4px solid #94a3b8;padding:.4rem .8rem;margin:.4rem 0;background:#f8fafc}
+.verified{border-color:#059669}.refuted{border-color:#dc2626}.unverifiable{border-color:#d97706}
+.log{font-family:monospace;font-size:.8rem;color:#64748b;max-height:14rem;overflow:auto;background:#f1f5f9;padding:.6rem;margin-top:1rem}
+</style></head><body>
+<h1>SWARM — Software Trust Auditor</h1>
+<p><em>Placeholder dashboard. The React claim-graph view is Jahnavi's module (see BUILD_STATUS.md).</em></p>
+<input id=repo placeholder="repo URL or local path"><button onclick="go()">Audit</button>
+<div id=claims></div><div class=log id=log></div>
+<script>
+async function go(){
+ const r=await fetch('/audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repo:document.getElementById('repo').value})});
+ const {run_id}=await r.json();
+ const es=new EventSource(`/runs/${run_id}/events`);
+ es.onmessage=async e=>{const ev=JSON.parse(e.data);
+  document.getElementById('log').innerHTML+=`<div>${ev.kind} ${ev.claim||''} ${ev.status||''} ${ev.confidence??''}</div>`;
+  if(ev.kind==='done'){es.close();const d=await(await fetch(`/runs/${run_id}/dossier`)).json();
+   document.getElementById('claims').innerHTML=d.claims.map(c=>`<div class="claim ${c.status}"><b>${c.text}</b><br>${c.status} · conf ${c.confidence.toFixed(2)} · ${c.method}<br><small>${(c.evidence[0]||{}).summary||''}</small></div>`).join('');}}
+}
+</script></body></html>
