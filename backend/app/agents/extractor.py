@@ -1,6 +1,6 @@
-﻿"""Extractor agent: README/docs/manifests -> claims (Granite micro tier).
+"""Extractor agent: README/docs/manifests -> claims (Granite micro tier).
 Design rule: the LLM PROPOSES claims and methods; deterministic rules VALIDATE.
-Small models freelance on format and method choice - we normalize both."""
+Small models freelance on format and method choice — we normalize both."""
 import re
 from pathlib import Path
 from ..llm.json_repair import repair_json
@@ -11,7 +11,7 @@ Respond ONLY with JSON of this exact shape:
 {"claims":[{"text":str,"type":"security|functional|license|quality|provenance",
 "source":str,"method":str,"spdx":str|null,"edges":[{"to_text":str,"rel":"supports|contradicts"}]}]}
 Allowed method values: run_tests, osv_lookup, secret_scan, sast_scan, license_check, maintenance_stats, llm_critique.
-Extract at most 12 claims. Do not invent claims that are not stated or strongly implied."""
+Extract at most 8 claims. Do not invent claims that are not stated or strongly implied."""
 
 VALID_METHODS = {"run_tests", "osv_lookup", "secret_scan", "sast_scan",
                  "license_check", "license_compat", "maintenance_stats", "llm_critique"}
@@ -31,6 +31,7 @@ SPDX_HINT = re.compile(r"\b(MIT|Apache-2\.0|Apache 2\.0|GPL-3\.0|GPLv3|BSD-3-Cla
 SPDX_NORM = {"apache 2.0": "Apache-2.0", "gplv3": "GPL-3.0"}
 
 # A mechanical method may only be used when the claim is actually ABOUT that thing.
+# Prevents nonsense verdicts like "easy to learn: REFUTED because tests failed".
 METHOD_FIT = {
     "run_tests": r"\btest(ed|s|ing)?\b|\bcoverage\b",
     "osv_lookup": r"vulnerab|\bcve\b|advisor|security issue",
@@ -51,7 +52,7 @@ def resolve_method(text: str, proposed: str | None) -> str:
         fit = METHOD_FIT.get(proposed)
         if fit and re.search(fit, text, re.I):
             return proposed
-        return "llm_critique"
+        return "llm_critique"   # proposed method doesn't fit the claim semantics
     return "llm_critique"
 
 def _normalize(obj) -> list[dict]:
@@ -64,7 +65,7 @@ def _normalize(obj) -> list[dict]:
         items = obj
     else:
         items = []
-    JUNK = __import__("re").compile(
+    JUNK = _re_junk = __import__("re").compile(
         r"^(installation|documentation|source code|requirements|usage|features|getting started|license)\b[:\s]*$|"
         r"^(documentation|source code|homepage)\s*:\s*\S+$", __import__("re").I)
     def is_junk(text: str) -> bool:
@@ -74,7 +75,7 @@ def _normalize(obj) -> list[dict]:
         if JUNK.match(t):
             return True
         words = [w for w in t.split() if not w.startswith("http")]
-        return len(words) < 1
+        return len(words) < 1   # only pure-URL lines
     out = []
     for it in items:
         if isinstance(it, dict) and it.get("text") and not is_junk(str(it["text"])):
@@ -121,7 +122,7 @@ async def extract_claims(repo: Path, llm, graph: ClaimGraph) -> None:
         claim = graph.add_claim(c["text"], ctype, c.get("source", "README"), method)
         claim.cost_tokens += per_claim
         spdx = c.get("spdx")
-        if not spdx and method in ("license_check", "license_compat"):
+        if not spdx and method == "license_check":
             m = SPDX_HINT.search(c["text"])
             if m:
                 spdx = SPDX_NORM.get(m.group(1).lower(), m.group(1))
@@ -141,6 +142,9 @@ async def extract_claims(repo: Path, llm, graph: ClaimGraph) -> None:
 
 
 # ---------------- Baseline claims ----------------
+# A trust audit always runs its mechanical checks — a silent README doesn't
+# get to opt out of scrutiny. Injected AFTER extraction; any method the README
+# already produced a claim for is skipped (no duplicates).
 BASELINE = [
     ("No known-vulnerable dependencies", "security", "osv_lookup"),
     ("No secrets committed to the repository", "security", "secret_scan"),
@@ -164,9 +168,18 @@ def inject_baseline(repo: Path, graph: ClaimGraph) -> None:
         if method == "license_compat" and claimed_spdx:
             note = f"spdx={claimed_spdx} " + note
         c.note = (c.note + " " if c.note else "") + note
+    # Compound-claim safety net: "MIT-licensed and well tested" routes to run_tests
+    # and the license half evaporates. If the docs declare an SPDX and a LICENSE
+    # file exists but no license_check claim was extracted, audit it anyway.
+    has_license_file = any((repo / n).exists() for n in
+                           ("LICENSE", "LICENSE.md", "LICENSE.txt", "COPYING"))
+    if claimed_spdx and has_license_file and "license_check" not in existing_methods:
+        c = graph.add_claim(f"Declared license ({claimed_spdx}) matches the LICENSE file",
+                            "license", "baseline-audit", "license_check")
+        c.note = f"spdx={claimed_spdx} [baseline]"
+    # test-suite baseline only when the repo actually has tests
     if "run_tests" not in existing_methods:
         has_tests = (repo / "tests").exists() or list(repo.glob("**/test_*.py"))
         if has_tests:
             c = graph.add_claim("Test suite passes", "quality", "baseline-audit", "run_tests")
             c.note = "[baseline]"
-

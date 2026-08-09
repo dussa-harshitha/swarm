@@ -95,8 +95,13 @@ def _parent_evidence_detail(ctx, claim) -> str:
 
 
 def _synthesize(graph: ClaimGraph) -> None:
-    """Walk the resolved graph and emit higher-order findings across claims."""
-    claims = graph.claims()
+    """Walk the resolved graph and emit higher-order findings across claims.
+    Integrity rule: synthesis judges the REPO'S claims (extracted + baseline).
+    Nodes SWARM spawned itself (investigations, prior synthesis) are excluded —
+    counting our own output would inflate the trust ratio we then indict the
+    repo's self-description with."""
+    claims = [c for c in graph.claims()
+              if not (c.source or "").startswith(("investigation:", "synthesis"))]
     refuted = [c for c in claims if c.status == "refuted"]
     security_refuted = [c for c in refuted if c.type == "security"]
     license_refuted = [c for c in refuted if c.type == "license"]
@@ -113,15 +118,18 @@ def _synthesize(graph: ClaimGraph) -> None:
     total = len(claims)
     if total and len(refuted) / total >= 0.5:
         findings.append(("trust", "high",
-            f"Overall trust verdict: {len(refuted)} of {total} claims refuted — this software's "
-            f"self-description is substantially inaccurate"))
+            f"Overall trust verdict: {len(refuted)} of {total} extracted/baseline claims refuted — "
+            f"this software's self-description is substantially inaccurate"))
 
     for ftype, sev, text in findings:
         node = graph.add_claim(text, ftype if ftype in ("security", "license") else "quality",
                                "synthesis", "synthesis")
-        node.status = "refuted"
+        # A synthesis node is a finding that HOLDS — status "verified" means
+        # "this statement is true", carrying severity in the note. (Previously
+        # hard-coded "refuted", which read as "this finding is false".)
+        node.status = "verified"
         node.confidence = 0.9
-        node.note = "[synthesis]"
+        node.note = f"[synthesis] severity={sev}"
         ev = Evidence(id=f"ev_{uuid.uuid4().hex[:6]}", kind="synthesis",
                       summary=text, detail="Derived by cross-claim synthesis over the resolved graph.")
         graph.attach_evidence(node.id, ev)

@@ -1,0 +1,34 @@
+# SWARM Trust Gate — audits this repository's self-claims on every push and PR.
+# A refuted claim (known CVE, committed secret, license conflict, failing test,
+# insecure code) fails the build and blocks the merge.
+name: SWARM Trust Gate
+
+on: [push, pull_request]
+
+jobs:
+  trust-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install SWARM + verifier tools
+        run: |
+          pip install networkx httpx gitpython bandit aiosqlite semgrep
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz | tar xz -C /usr/local/bin gitleaks
+
+      - name: Run SWARM trust gate
+        env:
+          SWARM_LLM: mock   # deterministic verifiers only in CI; set to 'watsonx' with secrets for full extraction
+        run: python scripts/swarm_ci.py . --fail-on refuted --max-refuted 0
+
+      - name: Upload trust dossier
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swarm-trust-dossier
+          path: swarm-dossier.json

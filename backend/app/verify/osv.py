@@ -1,4 +1,4 @@
-﻿"""Live CVE lookup via OSV.dev, resolving the FULL dependency tree where a
+"""Live CVE lookup via OSV.dev, resolving the FULL dependency tree where a
 lockfile is present (transitive deps), falling back to direct manifests.
 Ecosystems: PyPI (requirements.txt, poetry.lock, Pipfile.lock) and npm
 (package.json, package-lock.json)."""
@@ -61,13 +61,15 @@ def parse_package_lock(repo: Path) -> list[dict]:
         obj = json.loads(lock.read_text(errors="ignore"))
     except Exception:
         return deps
+    # lockfile v2/v3: "packages" map keyed by node_modules path
     for path, meta in (obj.get("packages") or {}).items():
-        if not path:
+        if not path:  # root project
             continue
         name = path.split("node_modules/")[-1]
         ver = meta.get("version")
         if name and ver:
             deps.append({"package": {"name": name, "ecosystem": "npm"}, "version": ver})
+    # lockfile v1: nested "dependencies"
     if not deps:
         def walk(d):
             for name, meta in (d or {}).items():
@@ -93,13 +95,16 @@ def parse_package_json(repo: Path) -> list[dict]:
 
 def resolve_dependencies(repo: Path) -> tuple[list[dict], str]:
     """Prefer lockfiles (transitive); fall back to direct manifests. Returns (deps, scope_label)."""
-    for parser in (parse_poetry_lock, parse_pipfile_lock):
+    # Python: lockfile first
+    for parser, label in ((parse_poetry_lock, "poetry.lock (transitive)"),
+                          (parse_pipfile_lock, "Pipfile.lock (transitive)")):
         d = parser(repo)
         if d:
             py = d
             break
     else:
         py = parse_requirements(repo)
+    # npm: lockfile first
     npm_lock = parse_package_lock(repo)
     npm = npm_lock if npm_lock else parse_package_json(repo)
 
@@ -128,12 +133,31 @@ async def check_vulnerabilities(repo: Path, client: httpx.AsyncClient | None = N
         return VerifyResult("unverifiable", 0.5, "No dependencies found to check", kind="cve")
     own = client is None
     client = client or httpx.AsyncClient(timeout=30)
+    fixes = []
     try:
+        # OSV querybatch caps at 1000; chunk to be safe
         results = []
         for i in range(0, len(deps), 500):
             resp = await client.post(OSV_URL, json={"queries": deps[i:i + 500]})
             resp.raise_for_status()
             results.extend(resp.json().get("results", []))
+        vulns, id_to_pkg = [], {}
+        for dep, res in zip(deps, results):
+            for v in (res.get("vulns") or []):
+                vid = v.get("id")
+                vulns.append(f"{dep['package']['name']}=={dep['version']}: {vid}")
+                id_to_pkg.setdefault(vid, dep["package"]["name"])
+        # Enrich the top advisories with real fixed-version data (/v1/vulns/{id}).
+        # Best-effort: enrichment failure never degrades the primary verdict.
+        for vid in list(id_to_pkg)[:5]:
+            try:
+                vresp = await client.get(f"https://api.osv.dev/v1/vulns/{vid}", timeout=10)
+                vresp.raise_for_status()
+                fixed = _first_fixed_version(vresp.json(), id_to_pkg[vid])
+                if fixed:
+                    fixes.append(f"FIX: {id_to_pkg[vid]} -> {fixed} ({vid})")
+            except Exception:
+                continue
     except (httpx.HTTPError, httpx.HTTPStatusError) as e:
         return VerifyResult("unverifiable", 0.5,
                             f"OSV API unreachable ({type(e).__name__}); {len(deps)} deps parsed from {scope}",
@@ -141,13 +165,25 @@ async def check_vulnerabilities(repo: Path, client: httpx.AsyncClient | None = N
     finally:
         if own:
             await client.aclose()
-    vulns = []
-    for dep, res in zip(deps, results):
-        for v in (res.get("vulns") or []):
-            vulns.append(f"{dep['package']['name']}=={dep['version']}: {v.get('id')}")
     if not vulns:
         return VerifyResult("verified", 0.92,
                             f"OSV: 0 known vulnerabilities across {len(deps)} deps [{scope}]", kind="cve")
+    detail = "; ".join(vulns[:10])
+    if fixes:
+        detail += "\n" + "\n".join(fixes)
     return VerifyResult("refuted", 0.95,
                         f"OSV: {len(vulns)} known vulnerability match(es) across {len(deps)} deps [{scope}]",
-                        detail="; ".join(vulns[:10]), kind="cve")
+                        detail=detail, kind="cve")
+
+
+def _first_fixed_version(vuln_obj: dict, pkg_name: str) -> str | None:
+    """Pull the first 'fixed' event for pkg_name from a /v1/vulns/{id} response."""
+    for aff in vuln_obj.get("affected") or []:
+        name = ((aff.get("package") or {}).get("name") or "").lower()
+        if name != pkg_name.lower():
+            continue
+        for rng in aff.get("ranges") or []:
+            for ev in rng.get("events") or []:
+                if ev.get("fixed"):
+                    return ev["fixed"]
+    return None

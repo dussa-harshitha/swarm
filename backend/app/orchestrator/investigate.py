@@ -49,17 +49,25 @@ def spawn_children(claim, result: VerifyResult) -> list[dict]:
 
 # ---- child verifiers (operate on evidence already gathered, near-zero cost) ----
 def resolve_osv_fixes(parent_detail: str) -> VerifyResult:
-    """Heuristic remediation check: OSV IDs with a fix are the norm for old pinned
-    versions. We flag that upgrades exist to be applied (actionable), honestly
-    noting this is advisory."""
+    """Remediation check against REAL fix data: the OSV verifier enriches its
+    evidence with 'FIX: <pkg> -> <version> (<id>)' lines pulled from
+    /v1/vulns/{id}. The claim is 'fixed versions are available' — so when fix
+    data exists the verdict is VERIFIED (good news: remediation is possible),
+    and when we cannot confirm it, we say so instead of asserting."""
+    fixes = re.findall(r"FIX: (\S+) -> (\S+) \(([\w.-]+)\)", parent_detail or "")
     ids = re.findall(r"(?:GHSA|CVE|PYSEC)-[\w-]+", parent_detail or "")
-    if not ids:
-        return VerifyResult("unverifiable", 0.5, "No CVE IDs to check for fixes", kind="cve")
-    return VerifyResult("refuted", 0.75,
-                        f"{len(ids)} advisories affect pinned versions; upgrading the flagged "
-                        f"dependencies is required to remediate",
-                        detail="Remediation: bump the refuted dependencies to non-vulnerable releases. "
-                               "Affected: " + ", ".join(ids[:6]), kind="cve")
+    if fixes:
+        listing = "; ".join(f"{pkg} -> {ver} ({vid})" for pkg, ver, vid in fixes[:6])
+        return VerifyResult("verified", 0.85,
+                            f"Patched releases confirmed for {len(fixes)} of the flagged advisories "
+                            f"— upgrading remediates",
+                            detail="Remediation (from OSV fix ranges): " + listing, kind="cve")
+    if ids:
+        return VerifyResult("unverifiable", 0.5,
+                            f"{len(set(ids))} advisories flagged, but fix-version data was not "
+                            f"gathered — availability of patches unconfirmed",
+                            detail="Affected: " + ", ".join(sorted(set(ids))[:6]), kind="cve")
+    return VerifyResult("unverifiable", 0.5, "No advisory IDs in parent evidence to check for fixes", kind="cve")
 
 def resolve_license_obligation(parent_detail: str) -> VerifyResult:
     m = re.search(r"is ((?:A?GPL|LGPL)[\w.\-]*)", parent_detail or "")
@@ -72,22 +80,52 @@ def resolve_license_obligation(parent_detail: str) -> VerifyResult:
                                f"dependency, or relicense the project.", kind="scan")
 
 def resolve_test_scope(parent_detail: str) -> VerifyResult:
-    failed = len(re.findall(r"FAILED", parent_detail or ""))
-    passed = len(re.findall(r"passed", parent_detail or ""))
-    if failed and failed <= 2 and passed:
+    """Blast-radius from the pytest summary line ('N failed, M passed ...').
+    Requires the suite to have run without -x so the counts are real.
+    Unparseable evidence yields no verdict — we never guess scope."""
+    d = parent_detail or ""
+    m_f = re.search(r"(\d+) failed", d)
+    m_p = re.search(r"(\d+) passed", d)
+    m_e = re.search(r"(\d+) errors?\b", d)
+    failed = int(m_f.group(1)) if m_f else 0
+    passed = int(m_p.group(1)) if m_p else 0
+    errors = int(m_e.group(1)) if m_e else 0
+    if not (m_f or m_p or m_e):
+        return VerifyResult("unverifiable", 0.5,
+                            "Could not parse a test summary from the evidence — scope not judged",
+                            kind="test_log")
+    if errors or (failed and not passed):
+        return VerifyResult("refuted", 0.75,
+                            f"Failures are broad or block collection ({failed} failed, {passed} passed, "
+                            f"{errors} errors) — not an isolated issue", kind="test_log")
+    if failed and failed <= 2 and passed >= failed:
         return VerifyResult("verified", 0.7,
-                            f"Failures are limited ({failed} failed, some passed) — isolated, not systemic",
+                            f"Failures are limited ({failed} failed vs {passed} passed) — isolated, not systemic",
                             kind="test_log")
     return VerifyResult("refuted", 0.7,
-                        "Failures are broad or block collection — not an isolated issue", kind="test_log")
+                        f"Failure rate is significant ({failed} failed vs {passed} passed) — systemic",
+                        kind="test_log")
+
+_NONCORE = re.compile(r"^(test_|conftest)|(_test|\.test|\.spec)\.\w+$|^(example|demo|fixture|sample)", re.I)
 
 def resolve_sast_locality(parent_detail: str) -> VerifyResult:
-    in_tests = bool(re.search(r"test|example|demo|fixture", parent_detail or "", re.I))
-    if in_tests:
+    """Where do the findings actually sit? Bandit/semgrep evidence is formatted
+    'RULE@filename:line' — parse every finding path and classify each file,
+    instead of substring-matching the whole blob (which flipped the verdict if
+    ANY path merely contained 'test')."""
+    hits = re.findall(r"@([\w.\-]+):\d+", parent_detail or "")
+    if not hits:
+        return VerifyResult("unverifiable", 0.5,
+                            "No finding locations in parent evidence — locality not judged", kind="scan")
+    noncore = [h for h in hits if _NONCORE.search(h)]
+    core = [h for h in hits if h not in noncore]
+    if not core:
         return VerifyResult("verified", 0.65,
-                            "Findings appear in test/example code — lower production risk", kind="scan")
+                            f"All {len(hits)} findings sit in test/example code — lower production risk",
+                            detail="Files: " + ", ".join(sorted(set(noncore))[:8]), kind="scan")
     return VerifyResult("refuted", 0.75,
-                        "Findings are in core source paths — production-relevant", kind="scan")
+                        f"{len(core)} of {len(hits)} findings are in core source files — production-relevant",
+                        detail="Core files: " + ", ".join(sorted(set(core))[:8]), kind="scan")
 
 CHILD_RESOLVERS = {
     "osv_fixes": resolve_osv_fixes,

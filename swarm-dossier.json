@@ -1,34 +1,35 @@
 {
-  "generated_at": 1786300550.5184934,
+  "generated_at": 1786299568.615824,
   "summary": {
-    "refuted": 6,
+    "refuted": 8,
+    "unverifiable": 1,
     "verified": 6
   },
-  "total_tokens": 220,
+  "total_tokens": 340,
   "claims": [
     {
-      "id": "c_4bff75",
+      "id": "c_c60c08",
       "text": "No known vulnerabilities in our dependency chain",
       "type": "security",
-      "source": "README.md",
+      "source": "**FILE: README.md**",
       "method": "osv_lookup",
       "status": "refuted",
       "confidence": 0.95,
       "evidence": [
         {
-          "id": "ev_299538",
+          "id": "ev_4a46ef",
           "kind": "cve",
           "summary": "OSV: 86 known vulnerability match(es) across 7 deps [poetry.lock (transitive) + package.json (direct)]",
           "detail": "requests==2.19.0: GHSA-9hjg-9r4m-mvj7; requests==2.19.0: GHSA-9wx4-h78v-vm56; requests==2.19.0: GHSA-gc5v-m9x4-r6x2; requests==2.19.0: GHSA-j8r2-6x86-q33q; requests==2.19.0: GHSA-x84v-xcm2-53pg; requests==2.19.0: PYSEC-2018-28; requests==2.19.0: PYSEC-2023-74; requests==2.19.0: PYSEC-2026-1872; requests==2.19.0: PYSEC-2026-1873; requests==2.19.0: PYSEC-2026-2275\nFIX: requests -> 2.32.4 (GHSA-9hjg-9r4m-mvj7)\nFIX: requests -> 2.32.0 (GHSA-9wx4-h78v-vm56)\nFIX: requests -> 2.33.0 (GHSA-gc5v-m9x4-r6x2)\nFIX: requests -> 2.31.0 (GHSA-j8r2-6x86-q33q)\nFIX: requests -> 2.20.0 (GHSA-x84v-xcm2-53pg)",
-          "created_at": 1786300514.079815
+          "created_at": 1786299517.1389172
         }
       ],
-      "cost_tokens": 44,
-      "cost_seconds": 4.6813905239105225,
+      "cost_tokens": 56,
+      "cost_seconds": 4.529268264770508,
       "note": ""
     },
     {
-      "id": "c_2da01c",
+      "id": "c_a7db68",
       "text": "No medium/high-severity static-analysis findings",
       "type": "security",
       "source": "baseline-audit",
@@ -37,19 +38,19 @@
       "confidence": 0.8,
       "evidence": [
         {
-          "id": "ev_4d38e4",
+          "id": "ev_1e0e9d",
           "kind": "scan",
           "summary": "bandit: bandit: 2 medium/high finding(s) | semgrep: semgrep: 9 high/medium finding(s) across languages",
           "detail": "bandit: B602@paylite.py:9; B307@paylite.py:12 || semgrep: detected-aws-access-key-id-value@settings.py:2; detected-aws-secret-access-key@settings.py:3; subprocess-shell-true@paylite.py:9; eval-detected@paylite.py:12; eval-detected@server.js:5",
-          "created_at": 1786300509.3974245
+          "created_at": 1786299512.609649
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 22.34511923789978,
+      "cost_seconds": 22.71977138519287,
       "note": "[baseline]"
     },
     {
-      "id": "c_08f960",
+      "id": "c_bc37cc",
       "text": "No secrets committed to the repository",
       "type": "security",
       "source": "baseline-audit",
@@ -58,82 +59,124 @@
       "confidence": 0.95,
       "evidence": [
         {
-          "id": "ev_73d1bc",
+          "id": "ev_8706e0",
           "kind": "scan",
           "summary": "gitleaks found 1 potential secret(s)",
           "detail": "generic-api-key@C:/tmp/paylite/config/settings.py:3",
-          "created_at": 1786300487.0523052
+          "created_at": 1786299489.8898776
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 1.542062520980835,
+      "cost_seconds": 1.4381747245788574,
       "note": "[baseline]"
     },
     {
-      "id": "c_9ce69f",
+      "id": "c_bf4706",
+      "text": "Dependency licenses are compatible with the project license",
+      "type": "license",
+      "source": "baseline-audit",
+      "method": "license_compat",
+      "status": "refuted",
+      "confidence": 0.85,
+      "evidence": [
+        {
+          "id": "ev_5002f8",
+          "kind": "scan",
+          "summary": "License conflict: 1 copyleft dep(s) under a permissive project license",
+          "detail": "gpl-charting-lib is GPL-3.0 (copyleft) but project claims MIT",
+          "created_at": 1786299520.165794
+        }
+      ],
+      "cost_tokens": 0,
+      "cost_seconds": 3.0238192081451416,
+      "note": "spdx=MIT [baseline]"
+    },
+    {
+      "id": "c_b3ed13",
       "text": "Security findings are concentrated in non-core / example code",
       "type": "security",
-      "source": "investigation:c_2da01c",
+      "source": "investigation:c_a7db68",
       "method": "sast_locality",
       "status": "refuted",
       "confidence": 0.75,
       "evidence": [
         {
-          "id": "ev_f746d1",
+          "id": "ev_7e0e8a",
           "kind": "scan",
           "summary": "7 of 7 findings are in core source files \u2014 production-relevant",
           "detail": "Core files: paylite.py, server.js, settings.py",
-          "created_at": 1786300509.3984244
+          "created_at": 1786299512.609649
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 0.0009999275207519531,
+      "cost_seconds": 0.0,
       "note": "spawned: locate where the findings sit [investigation]"
     },
     {
-      "id": "c_3d6bd7",
-      "text": "MIT licensed - free for commercial use",
+      "id": "c_0fc0f9",
+      "text": "MIT licensed",
       "type": "license",
-      "source": "README.md",
+      "source": "**FILE: README.md**",
       "method": "license_check",
       "status": "refuted",
       "confidence": 0.92,
       "evidence": [
         {
-          "id": "ev_7235d4",
+          "id": "ev_ae62a2",
           "kind": "file_match",
           "summary": "Claimed MIT but LICENSE is GPL-3.0",
           "detail": "",
-          "created_at": 1786300514.0828118
+          "created_at": 1786299517.1419747
         }
       ],
-      "cost_tokens": 44,
-      "cost_seconds": 0.0019948482513427734,
+      "cost_tokens": 56,
+      "cost_seconds": 0.002060413360595703,
       "note": "spdx=MIT"
     },
     {
-      "id": "c_e4e52d",
+      "id": "c_f79c9d",
+      "text": "The effective combined license is copyleft (obligations propagate to the whole work)",
+      "type": "license",
+      "source": "investigation:c_bf4706",
+      "method": "license_obligation",
+      "status": "refuted",
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "id": "ev_6e5c31",
+          "kind": "scan",
+          "summary": "Combined-work obligation: GPL-3.0 copyleft propagates \u2014 the whole project must comply with GPL-3.0, contradicting the permissive license claimed",
+          "detail": "Distributing this project under its claimed permissive license while including a GPL-3.0 dependency is a license violation. Options: remove the dependency, or relicense the project.",
+          "created_at": 1786299520.165794
+        }
+      ],
+      "cost_tokens": 0,
+      "cost_seconds": 0.0,
+      "note": "spawned: license conflict warrants combined-obligation analysis [investigation]"
+    },
+    {
+      "id": "c_6a9ac2",
       "text": "Thoroughly tested with full coverage",
       "type": "quality",
-      "source": "README.md",
+      "source": "**FILE: README.md**",
       "method": "run_tests",
       "status": "refuted",
       "confidence": 0.92,
       "evidence": [
         {
-          "id": "ev_409a85",
+          "id": "ev_e67bc1",
           "kind": "test_log",
           "summary": "Test suite has failures (docker sandbox, network off)",
-          "detail": ".F                                                                       [100%]\n=================================== FAILURES ===================================\n____________________________ test_refund_supported _____________________________\n\n    def test_refund_supported():\n>       from paylite import refund   # planted: refund doesn't exist -> fails\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       ImportError: cannot import name 'refund' from 'paylite' (/repo/paylite.py)\n\ntests/test_paylite.py:9: ImportError\n=========================== short test summary info ============================\nFAILED tests/test_paylite.py::test_refund_supported - ImportError: cannot imp...\n1 failed, 1 passed in 0.36s\n",
-          "created_at": 1786300550.3782382
+          "detail": ".F                                                                       [100%]\n=================================== FAILURES ===================================\n____________________________ test_refund_supported _____________________________\n\n    def test_refund_supported():\n>       from paylite import refund   # planted: refund doesn't exist -> fails\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       ImportError: cannot import name 'refund' from 'paylite' (/repo/paylite.py)\n\ntests/test_paylite.py:9: ImportError\n=========================== short test summary info ============================\nFAILED tests/test_paylite.py::test_refund_supported - ImportError: cannot imp...\n1 failed, 1 passed in 0.39s\n",
+          "created_at": 1786299568.4708207
         }
       ],
-      "cost_tokens": 44,
-      "cost_seconds": 32.92546606063843,
+      "cost_tokens": 56,
+      "cost_seconds": 39.47436881065369,
       "note": ""
     },
     {
-      "id": "c_62e703",
+      "id": "c_adf907",
       "text": "Systemic security risk: 3 independent security claims refuted (dependencies, code, and/or secrets all show problems)",
       "type": "security",
       "source": "synthesis",
@@ -142,11 +185,11 @@
       "confidence": 0.9,
       "evidence": [
         {
-          "id": "ev_043c2c",
+          "id": "ev_62187b",
           "kind": "synthesis",
           "summary": "Systemic security risk: 3 independent security claims refuted (dependencies, code, and/or secrets all show problems)",
           "detail": "Derived by cross-claim synthesis over the resolved graph.",
-          "created_at": 1786300550.5184934
+          "created_at": 1786299568.615824
         }
       ],
       "cost_tokens": 0,
@@ -154,8 +197,8 @@
       "note": "[synthesis] severity=high"
     },
     {
-      "id": "c_025e74",
-      "text": "Overall trust verdict: 5 of 7 extracted/baseline claims refuted \u2014 this software's self-description is substantially inaccurate",
+      "id": "c_922903",
+      "text": "Overall trust verdict: 6 of 8 extracted/baseline claims refuted \u2014 this software's self-description is substantially inaccurate",
       "type": "quality",
       "source": "synthesis",
       "method": "synthesis",
@@ -163,11 +206,11 @@
       "confidence": 0.9,
       "evidence": [
         {
-          "id": "ev_7c763d",
+          "id": "ev_016626",
           "kind": "synthesis",
-          "summary": "Overall trust verdict: 5 of 7 extracted/baseline claims refuted \u2014 this software's self-description is substantially inaccurate",
+          "summary": "Overall trust verdict: 6 of 8 extracted/baseline claims refuted \u2014 this software's self-description is substantially inaccurate",
           "detail": "Derived by cross-claim synthesis over the resolved graph.",
-          "created_at": 1786300550.5184934
+          "created_at": 1786299568.615824
         }
       ],
       "cost_tokens": 0,
@@ -175,87 +218,108 @@
       "note": "[synthesis] severity=high"
     },
     {
-      "id": "c_be4e9f",
+      "id": "c_df63a3",
       "text": "Fixed versions are available for the 15 vulnerable dependencies",
       "type": "security",
-      "source": "investigation:c_4bff75",
+      "source": "investigation:c_c60c08",
       "method": "osv_fixes",
       "status": "verified",
       "confidence": 0.85,
       "evidence": [
         {
-          "id": "ev_6278c2",
+          "id": "ev_becfe0",
           "kind": "cve",
           "summary": "Patched releases confirmed for 5 of the flagged advisories \u2014 upgrading remediates",
           "detail": "Remediation (from OSV fix ranges): requests -> 2.32.4 (GHSA-9hjg-9r4m-mvj7); requests -> 2.32.0 (GHSA-9wx4-h78v-vm56); requests -> 2.33.0 (GHSA-gc5v-m9x4-r6x2); requests -> 2.31.0 (GHSA-j8r2-6x86-q33q); requests -> 2.20.0 (GHSA-x84v-xcm2-53pg)",
-          "created_at": 1786300514.080817
+          "created_at": 1786299517.1399143
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 0.0010020732879638672,
+      "cost_seconds": 0.0,
       "note": "spawned: refuted CVE claim warrants remediation check [investigation]"
     },
     {
-      "id": "c_28f5e0",
-      "text": "All dependency licenses are compatible with our MIT license",
+      "id": "c_0fd740",
+      "text": "Systemic licensing risk: both the declared license and its dependency-license compatibility are refuted \u2014 this project cannot be safely used under its stated terms",
       "type": "license",
-      "source": "README.md",
-      "method": "license_compat",
+      "source": "synthesis",
+      "method": "synthesis",
       "status": "verified",
-      "confidence": 0.8,
+      "confidence": 0.9,
       "evidence": [
         {
-          "id": "ev_71785b",
-          "kind": "scan",
-          "summary": "No license conflicts among 3 resolvable deps (project claims: GPL-3.0)",
-          "detail": "",
-          "created_at": 1786300517.4527721
+          "id": "ev_5c924a",
+          "kind": "synthesis",
+          "summary": "Systemic licensing risk: both the declared license and its dependency-license compatibility are refuted \u2014 this project cannot be safely used under its stated terms",
+          "detail": "Derived by cross-claim synthesis over the resolved graph.",
+          "created_at": 1786299568.615824
         }
       ],
-      "cost_tokens": 44,
-      "cost_seconds": 3.369960308074951,
+      "cost_tokens": 0,
+      "cost_seconds": 0.0,
+      "note": "[synthesis] severity=high"
+    },
+    {
+      "id": "c_8c0a36",
+      "text": "free for commercial use",
+      "type": "license",
+      "source": "**FILE: README.md**",
+      "method": "llm_critique",
+      "status": "unverifiable",
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "id": "ev_12b26b",
+          "kind": "llm_critique",
+          "summary": "The README states the MIT license is free for commercial use, but it does not provide independent technical evidence (e.g., a LICENSE file with MIT text) to confirm that the software is actually licensed under MIT. [LLM verdict, confidence capped]",
+          "detail": "",
+          "created_at": 1786299528.9964519
+        }
+      ],
+      "cost_tokens": 116,
+      "cost_seconds": 8.829659223556519,
       "note": ""
     },
     {
-      "id": "c_6ef68c",
+      "id": "c_2c5837",
       "text": "Test failures are isolated (not a broad breakage)",
       "type": "quality",
-      "source": "investigation:c_e4e52d",
+      "source": "investigation:c_6a9ac2",
       "method": "test_failure_scope",
       "status": "verified",
       "confidence": 0.7,
       "evidence": [
         {
-          "id": "ev_285bf9",
+          "id": "ev_ee7f9a",
           "kind": "test_log",
           "summary": "Failures are limited (1 failed vs 1 passed) \u2014 isolated, not systemic",
           "detail": "",
-          "created_at": 1786300550.3788667
+          "created_at": 1786299568.4718623
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 0.0006284713745117188,
+      "cost_seconds": 0.0010416507720947266,
       "note": "spawned: quantify blast radius of test failures [investigation]"
     },
     {
-      "id": "c_45199e",
+      "id": "c_b38c4a",
       "text": "Actively maintained by the PayLite team",
       "type": "provenance",
-      "source": "README.md",
+      "source": "**FILE: README.md**",
       "method": "maintenance_stats",
       "status": "verified",
       "confidence": 0.85,
       "evidence": [
         {
-          "id": "ev_cd4ff3",
+          "id": "ev_9fbec9",
           "kind": "scan",
           "summary": "Actively maintained",
           "detail": "last commit 0d ago; 6 commits in 90d; 6 sampled",
-          "created_at": 1786300550.5184934
+          "created_at": 1786299568.6148236
         }
       ],
-      "cost_tokens": 44,
-      "cost_seconds": 0.1386275291442871,
+      "cost_tokens": 56,
+      "cost_seconds": 0.1429612636566162,
       "note": ""
     }
   ]

@@ -1,4 +1,6 @@
-﻿"""SWARM orchestration server: start audits, stream events, fetch dossiers."""
+"""SWARM orchestration server: start audits, stream events, fetch dossiers.
+NOTE: fresh-built minimal server. The spec assumed porting the team's prior
+FastAPI infra (JWT etc.) — that codebase was not provided; see BUILD_STATUS.md."""
 import asyncio, os, uuid, json
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
@@ -26,7 +28,7 @@ def build_llm():
             return Router(primary)
     if mode == "ollama":
         return Router(OllamaLLM())
-    # mock default: refuses roles it has no script for - honest, not fake
+    # mock default: refuses roles it has no script for — honest, not fake
     return Router(MockLLM(script=json.loads(os.getenv("SWARM_MOCK_SCRIPT", "{}"))))
 
 class AuditRequest(BaseModel):
@@ -34,6 +36,17 @@ class AuditRequest(BaseModel):
 
 @app.post("/audit")
 async def start_audit(req: AuditRequest):
+    # Demo safety: with SWARM_LOCAL_ROOT set (e.g. C:\tmp), local-path audits are
+    # confined under that root — nobody types C:\Users\you into the projector and
+    # gets gitleaks run over your home directory. URLs are unaffected.
+    local_root = os.getenv("SWARM_LOCAL_ROOT")
+    if local_root:
+        p = Path(req.repo)
+        if p.exists():
+            try:
+                p.resolve().relative_to(Path(local_root).resolve())
+            except ValueError:
+                raise HTTPException(400, f"Local-path audits are restricted to {local_root} on this instance")
     run_id = uuid.uuid4().hex[:8]
     graph = ClaimGraph()
     RUNS[run_id] = graph
@@ -48,6 +61,10 @@ async def start_audit(req: AuditRequest):
             await store.save(run_id, req.repo, graph)
         except Exception as e:
             graph._event("job_error", "-", {"note": f"{type(e).__name__}: {str(e)[:300]}"})
+        finally:
+            # Explicit completion signal — SSE termination must not be inferred
+            # from graph state (racy, and hangs forever on early errors).
+            graph._event("audit_complete", "-", {})
     asyncio.create_task(job())
     return {"run_id": run_id}
 
@@ -57,12 +74,16 @@ async def events(run_id: str):
         raise HTTPException(404)
     async def gen():
         seen = 0
+        done = False
         graph = RUNS[run_id]
-        while True:
+        while not done:
             while seen < len(graph.events):
-                yield f"data: {json.dumps(graph.events[seen])}\n\n"
+                ev = graph.events[seen]
+                yield f"data: {json.dumps(ev)}\n\n"
                 seen += 1
-            if not graph.unresolved() and seen == len(graph.events) and seen > 0:
+                if ev.get("kind") == "audit_complete":
+                    done = True
+            if done:
                 yield "data: {\"kind\": \"done\"}\n\n"
                 break
             await asyncio.sleep(0.4)
@@ -77,4 +98,3 @@ async def dossier(run_id: str):
 @app.get("/")
 async def index():
     return HTMLResponse((Path(__file__).parent / "static_index.html").read_text(encoding="utf-8"))
-

@@ -1,4 +1,4 @@
-﻿"""Action registry: claim.method -> executable verification, with cost model."""
+"""Action registry: claim.method -> executable verification, with cost model."""
 from pathlib import Path
 from ..verify import license as lic, sandbox, secrets, sast, osv, maintenance, semgrep_scan as sgs, license_compat as lcompat
 from ..verify.results import VerifyResult, ToolMissing
@@ -52,7 +52,13 @@ async def execute(method: str, claim, ctx: ActionContext) -> VerifyResult:
 async def _execute(method: str, claim, ctx: ActionContext) -> VerifyResult:
     try:
         if method == "license_check":
-            spdx = (claim.note or "spdx=MIT").split("=", 1)[1] if "spdx=" in (claim.note or "") else "MIT"
+            note = claim.note or ""
+            if "spdx=" not in note:
+                return VerifyResult("unverifiable", 0.5,
+                                    "Claimed license could not be determined from the claim text — "
+                                    "no basis to compare against the LICENSE file (never assuming a default)",
+                                    kind="file_match")
+            spdx = note.split("spdx=", 1)[1].split()[0]
             return lic.verify_license_claim(ctx.repo, spdx)
         if method == "run_tests":
             return sandbox.run_tests(ctx.repo)
@@ -70,8 +76,11 @@ async def _execute(method: str, claim, ctx: ActionContext) -> VerifyResult:
         if method == "llm_critique":
             from ..agents.extractor import gather_docs
             from ..agents.critic import file_tree
-            context = file_tree(ctx.repo) + "\n\nPROJECT DOCS (the claim's own source - NOT evidence):\n" + gather_docs(ctx.repo, 4000)
+            context = file_tree(ctx.repo) + "\n\nPROJECT DOCS (the claim's own source — NOT evidence):\n" + gather_docs(ctx.repo, 4000)
             res = await critique(claim.text, context, ctx.llm)
+            # Deterministic circularity guard: "verified because the README says so"
+            # is the claim citing itself. Prompt rules ask the model not to; this
+            # makes it structurally impossible regardless of model obedience.
             import re as _re
             CIRCULAR = _re.compile(
                 r"readme[^.]{0,40}(explicitly )?(state|say|claim|mention|describe)|"
@@ -81,6 +90,7 @@ async def _execute(method: str, claim, ctx: ActionContext) -> VerifyResult:
             if verdict == "verified" and CIRCULAR.search(reason):
                 verdict = "unverifiable"
                 reason = "circular evidence rejected (claim's own docs cited as proof). " + reason
+            # Evidence-tier confidence cap: an LLM opinion never outranks mechanical proof.
             LLM_CONF_CAP = 0.7
             conf = min(res["confidence"], LLM_CONF_CAP)
             return VerifyResult(verdict, conf, reason + " [LLM verdict, confidence capped]",
@@ -88,4 +98,3 @@ async def _execute(method: str, claim, ctx: ActionContext) -> VerifyResult:
         return VerifyResult("unverifiable", 0.5, f"No action registered for method '{method}'")
     except ToolMissing as e:
         return VerifyResult("unverifiable", 0.5, f"Required tool missing: {e}", kind="scan")
-

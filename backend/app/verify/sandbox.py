@@ -33,7 +33,7 @@ def run_pytest_docker(repo: Path, timeout: int = 420) -> VerifyResult:
         "docker", "run", "--rm", "--network", "none", "--memory", "512m", "--cpus", "1",
         "-e", "PYTHONDONTWRITEBYTECODE=1",
         "-v", f"{vol}:/venv", "-v", f"{repo}:/repo:ro", "-w", "/repo", IMAGE,
-        "/venv/bin/python", "-m", "pytest", "-q", "--no-header", "-x", "-p", "no:cacheprovider",
+        "/venv/bin/python", "-m", "pytest", "-q", "--no-header", "-p", "no:cacheprovider",
     ]
     t0 = time.time()
     try:
@@ -73,9 +73,9 @@ def _scrubbed_env(repo: Path) -> dict:
 def run_pytest_subprocess(repo: Path, timeout: int = 120) -> VerifyResult:
     has_tests = (repo / "tests").exists() or list(repo.glob("test_*.py")) or list(repo.glob("**/test_*.py"))
     if not has_tests:
-        return VerifyResult("refuted", 0.85, "Claim implies tests, but no test files exist in the repo", kind="test_log")
+        return VerifyResult("refuted", 0.85, "Claim implies tests, but no Python test files exist in the repo", kind="test_log")
     t0 = time.time()
-    cmd = [sys.executable, "-m", "pytest", "-q", "--no-header", "-x", "-p", "no:cacheprovider"]
+    cmd = [sys.executable, "-m", "pytest", "-q", "--no-header", "-p", "no:cacheprovider"]
     try:
         proc = subprocess.run(cmd, cwd=repo, capture_output=True, text=True,
                               timeout=timeout, env=_scrubbed_env(repo))
@@ -92,8 +92,62 @@ def run_pytest_subprocess(repo: Path, timeout: int = 120) -> VerifyResult:
         return VerifyResult("refuted", 0.9, f"Test suite has failures {label}", detail=tail, kind="test_log", seconds=dur)
     return VerifyResult("unverifiable", 0.5, f"Test run errored (exit {proc.returncode})", detail=tail, kind="test_log", seconds=dur)
 
+# ---------------- Ecosystem detection ----------------
+def detect_test_ecosystem(repo: Path) -> str:
+    """Classify the repo's test surface BEFORE choosing how to judge it.
+    Integrity rule: never refute a 'tested' claim just because the tests are
+    not in an ecosystem we can execute. Returns: python | js | none."""
+    has_py_tests = ((repo / "tests").exists()
+                    or bool(list(repo.glob("test_*.py")))
+                    or bool(list(repo.glob("**/test_*.py"))))
+    if has_py_tests:
+        return "python"
+    pkg = repo / "package.json"
+    if pkg.exists():
+        try:
+            import json as _json
+            obj = _json.loads(pkg.read_text(errors="ignore"))
+            script = (obj.get("scripts") or {}).get("test", "")
+            if script and "no test specified" not in script:
+                return "js"
+        except Exception:
+            pass
+    # other ecosystems we recognize but cannot execute yet
+    for marker in ("go.mod", "Cargo.toml", "pom.xml", "build.gradle"):
+        if (repo / marker).exists():
+            return "other"
+    return "none"
+
+
 def run_tests(repo: Path, timeout: int = 420) -> VerifyResult:
     mode = os.getenv("SWARM_SANDBOX", "auto")
+    eco = detect_test_ecosystem(repo)
+
+    if eco == "js":
+        return VerifyResult("unverifiable", 0.5,
+                            "Test suite detected (package.json test script) but JS test execution "
+                            "is not yet supported — declining to judge rather than falsely refute",
+                            kind="test_log")
+    if eco == "other":
+        return VerifyResult("unverifiable", 0.5,
+                            "Non-Python/JS project detected — test execution for this ecosystem "
+                            "is not yet supported; no verdict granted",
+                            kind="test_log")
+    if eco == "none":
+        return VerifyResult("refuted", 0.85,
+                            "Claim implies tests, but no recognizable test suite exists "
+                            "(checked: pytest files/dirs, npm test script, go/cargo/maven/gradle manifests)",
+                            kind="test_log")
+
+    # eco == "python": execute
+    if mode == "docker":
+        # STRICT mode (demo safety): never fall back to host execution of untrusted code
+        if docker_available():
+            return run_pytest_docker(repo, timeout)
+        return VerifyResult("unverifiable", 0.5,
+                            "Docker sandbox required (SWARM_SANDBOX=docker) but Docker is unavailable — "
+                            "refusing host execution of untrusted code",
+                            kind="test_log")
     if mode != "subprocess" and docker_available():
         return run_pytest_docker(repo, timeout)
     return run_pytest_subprocess(repo, min(timeout, 120))
