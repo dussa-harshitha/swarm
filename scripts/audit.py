@@ -55,7 +55,7 @@ async def main() -> None:
         print("!! extractor returned no claims - check model output / tag")
         return
 
-    dossier = await run_audit(graph, ActionContext(repo, llm), Budget(max_seconds=600))
+    dossier = await run_audit(graph, ActionContext(repo, llm, graph=graph), Budget(max_seconds=600))
 
     print("\n== TRUST DOSSIER")
     for c in dossier["claims"]:
@@ -68,3 +68,4 @@ async def main() -> None:
     print(f"dossier saved -> {out.resolve()}")
 
 asyncio.run(main())
+

@@ -1,41 +1,46 @@
-<!doctype html><html><head><meta charset="utf8"><title>SWARM — Software Trust Auditor</title>
+<!doctype html><html><head><meta charset="utf-8"><title>SWARM — Software Trust Auditor</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 :root{--ink:#0F172A;--gray:#64748B;--faint:#F1F5F9;--line:#E2E8F0;--em:#059669;--emsoft:#D1FAE5;--red:#DC2626;--redsoft:#FEE2E2;--amb:#D97706;--ambsoft:#FEF3C7;--blu:#2563EB}
 *{box-sizing:border-box}body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#fff;color:var(--ink)}
-.wrap{max-width:1060px;margin:0 auto;padding:2rem 1.5rem}
-h1{font-size:1.9rem;margin:0}.tag{color:var(--em);font-weight:700;letter-spacing:.12em;font-size:.72rem;text-transform:uppercase}
-.sub{color:var(--gray);margin:.35rem 0 1.4rem;font-size:.95rem}
-.bar{display:flex;gap:.6rem;margin-bottom:1.4rem}
+.wrap{max-width:1280px;margin:0 auto;padding:1.6rem 1.5rem}
+h1{font-size:1.7rem;margin:0}.tag{color:var(--em);font-weight:700;letter-spacing:.12em;font-size:.7rem;text-transform:uppercase}
+.sub{color:var(--gray);margin:.3rem 0 1.1rem;font-size:.92rem}
+.bar{display:flex;gap:.6rem;margin-bottom:1rem}
 input{flex:1;padding:.7rem .9rem;border:1px solid var(--line);border-radius:10px;font-size:.95rem;outline:none}
 input:focus{border-color:var(--em)}
 button{padding:.7rem 1.4rem;background:var(--em);color:#fff;border:0;border-radius:10px;font-weight:700;font-size:.95rem;cursor:pointer}
 button:disabled{opacity:.5;cursor:wait}
-.chips{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.chips{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
 .chip{padding:.3rem .8rem;border-radius:99px;font-size:.8rem;font-weight:700;background:var(--faint);color:var(--gray)}
 .chip.v{background:var(--emsoft);color:var(--em)}.chip.r{background:var(--redsoft);color:var(--red)}.chip.u{background:var(--ambsoft);color:var(--amb)}
 .chip.cost{background:#EFF6FF;color:var(--blu)}
-.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:1.2rem}
-@media(max-width:820px){.cols{grid-template-columns:1fr}}
-.claim{border:1px solid var(--line);border-left:5px solid var(--gray);border-radius:10px;padding:.7rem .9rem;margin-bottom:.6rem;background:#fff;transition:border-color .3s}
-.claim.verified{border-left-color:var(--em)}.claim.refuted{border-left-color:var(--red);background:#FEF7F7}.claim.unverifiable{border-left-color:var(--amb)}.claim.checking{border-left-color:var(--blu)}
-.claim b{font-size:.93rem}.meta{color:var(--gray);font-size:.78rem;margin-top:.2rem}
-.st{font-weight:800;text-transform:uppercase;font-size:.72rem;letter-spacing:.06em}
-.st.verified{color:var(--em)}.st.refuted{color:var(--red)}.st.unverifiable{color:var(--amb)}.st.checking{color:var(--blu)}
-.ev{margin-top:.45rem;font-size:.8rem;color:var(--ink);background:var(--faint);border-radius:8px;padding:.45rem .6rem;display:none;white-space:pre-wrap;word-break:break-word}
-.claim.open .ev{display:block}
-.logbox{border:1px solid var(--line);border-radius:10px;padding:.7rem;max-height:460px;overflow:auto;background:#0F172A}
-.logbox div{font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:#94A3B8;padding:.12rem 0;border-bottom:1px solid #1E293B}
+.cols{display:grid;grid-template-columns:1.9fr 1fr;gap:1.1rem}
+@media(max-width:920px){.cols{grid-template-columns:1fr}}
+#graph{border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#fbfdff,#f6f9fc);height:560px;position:relative;overflow:hidden}
+#svg{width:100%;height:100%;display:block}
+.legend{position:absolute;top:10px;left:12px;font-size:.7rem;color:var(--gray);background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:8px;padding:.4rem .55rem;line-height:1.6;z-index:2}
+.legend b{color:var(--ink)}
+.dotl{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.gnode{cursor:pointer}
+.gnode text{font-size:11px;fill:#0F172A;pointer-events:none;font-weight:500}
+.side h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gray);margin:.1rem 0 .5rem}
+.logbox{border:1px solid var(--line);border-radius:10px;padding:.6rem;height:250px;overflow:auto;background:#0F172A;margin-bottom:1rem}
+.logbox div{font-family:ui-monospace,Consolas,monospace;font-size:.7rem;color:#94A3B8;padding:.1rem 0;border-bottom:1px solid #1E293B}
 .logbox .k{color:#34D399;font-weight:700}
-h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gray);margin:.2rem 0 .6rem}
-.footer{margin-top:1.6rem;color:var(--gray);font-size:.8rem;text-align:center}
+#detail{border:1px solid var(--line);border-radius:10px;padding:.7rem;height:270px;overflow:auto;font-size:.82rem}
+#detail .st{font-weight:800;text-transform:uppercase;font-size:.72rem;letter-spacing:.05em}
+#detail .st.verified{color:var(--em)}#detail .st.refuted{color:var(--red)}#detail .st.unverifiable{color:var(--amb)}
+#detail pre{white-space:pre-wrap;word-break:break-word;background:var(--faint);border-radius:8px;padding:.5rem;font-size:.75rem;margin:.4rem 0 0}
+.footer{margin-top:1.2rem;color:var(--gray);font-size:.78rem;text-align:center}
+.hint{color:var(--gray);font-size:.85rem;padding:2rem;text-align:center;position:absolute;top:40%;left:0;right:0}
 </style></head><body><div class="wrap">
 <div class="tag">HackVerse 2.0 · IBM Granite · watsonx.ai</div>
 <h1>SWARM <span style="color:var(--em)">— Software Trust Auditor</span></h1>
-<p class="sub">Point it at any public repository. Every claim proven or broken by execution — nothing ships unverified.</p>
+<p class="sub">Point it at any repository. Every claim proven or broken by execution — nothing ships unverified.</p>
 <div class="bar">
-  <input id="repo" placeholder="https://github.com/owner/repo  (or a local path)" onkeydown="if(event.key==='Enter')go()">
-  <button id="btn" onclick="go()">Audit</button>
+  <input id="repo" placeholder="repo URL or local path (e.g. /tmp/paylite)">
+  <button id="btn">Audit</button>
 </div>
 <div class="chips" id="chips" style="display:none">
   <span class="chip v" id="cv">verified 0</span><span class="chip r" id="cr">refuted 0</span>
@@ -43,47 +48,144 @@ h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gray
   <span class="chip" id="cw">0s</span>
 </div>
 <div class="cols">
-  <div><h3>Claim graph</h3><div id="claims"><div class="meta">Run an audit to watch the swarm work.</div></div></div>
-  <div><h3>Agent action log</h3><div class="logbox" id="log"></div></div>
+  <div>
+    <div id="graph">
+      <div class="legend">
+        <div><span class="dotl" style="background:#059669"></span><b>verified</b></div>
+        <div><span class="dotl" style="background:#DC2626"></span><b>refuted</b></div>
+        <div><span class="dotl" style="background:#D97706"></span><b>unverifiable</b></div>
+        <div><span class="dotl" style="background:#2563EB"></span><b>checking</b></div>
+        <div style="margin-top:3px">◯ dashed ring = SWARM baseline check</div>
+      </div>
+      <div class="hint" id="ghint">Run an audit to watch the claim graph build itself.</div>
+      <svg id="svg"></svg>
+    </div>
+  </div>
+  <div class="side">
+    <h3>Agent action log</h3><div class="logbox" id="log"></div>
+    <h3>Evidence</h3><div id="detail"><div class="hint" style="position:static;padding:1rem">Click a node to see its evidence.</div></div>
+  </div>
 </div>
-<div class="footer">The swarm doesn't just generate. It proves. · Granite-4-H-Small + Granite-8B-Code on watsonx.ai · local fallback via Ollama</div>
+<div class="footer">The swarm doesn't just generate. It proves. · Granite-4-H-Small on watsonx.ai · local fallback via Ollama</div>
 </div>
 <script>
-let t0, timer, runId=null;
-const $=id=>document.getElementById(id);
-function logline(ev){
-  const d=document.createElement('div');
-  d.innerHTML=`<span class="k">${ev.kind}</span> ${ev.claim||''} ${ev.status||''} ${ev.confidence??''} ${ev.method||''} ${ev.rel?('via '+ev.rel):''}${ev.note?(' — '+ev.note):''}${ev.raw?(' raw: '+ev.raw):''}`;
-  $('log').prepend(d);
+var SVGNS="http://www.w3.org/2000/svg";
+var COL={verified:"#059669",refuted:"#DC2626",unverifiable:"#D97706",checking:"#2563EB",unverified:"#94A3B8"};
+var $=function(id){return document.getElementById(id);};
+var runId=null,t0,timer,nodes=[],links=[],byId={},svg,W,H,animTimer,dragTarget=null;
+
+function initGraph(){
+  $('ghint').style.display='none';
+  svg=$('svg'); W=svg.clientWidth||900; H=svg.clientHeight||560;
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  nodes=[]; links=[]; byId={};
+  if(animTimer) clearInterval(animTimer);
+  animTimer=setInterval(tick,33);
+  svg.onmousemove=function(e){ if(dragTarget){var r=svg.getBoundingClientRect();dragTarget.x=e.clientX-r.left;dragTarget.y=e.clientY-r.top;dragTarget.vx=0;dragTarget.vy=0;} };
+  svg.onmouseup=function(){dragTarget=null;};
 }
-async function refresh(){
-  if(!runId) return;
-  try{
-    const d=await(await fetch(`/runs/${runId}/dossier`)).json();
-    const s=d.summary||{};
-    $('cv').textContent=`verified ${s.verified||0}`; $('cr').textContent=`refuted ${s.refuted||0}`;
-    $('cu').textContent=`unverifiable ${s.unverifiable||0}`; $('ct').textContent=`${d.total_tokens||0} tokens`;
-    $('claims').innerHTML=d.claims.map(c=>{
-      const ev=(c.evidence&&c.evidence[0])?c.evidence[0].summary+(c.evidence[0].detail?'\n'+c.evidence[0].detail.slice(0,600):''):'';
-      return `<div class="claim ${c.status}" onclick="this.classList.toggle('open')">
-        <span class="st ${c.status}">${c.status}</span> &nbsp;<b>${c.text.replace(/</g,'&lt;').slice(0,140)}</b>
-        <div class="meta">confidence ${c.confidence.toFixed(2)} · method ${c.method} · ${c.type} · click for evidence</div>
-        <div class="ev">${(ev||'no evidence attached').replace(/</g,'&lt;')}</div></div>`;
-    }).join('');
-  }catch(e){}
+function el(tag,attrs){var e=document.createElementNS(SVGNS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+function shortLabel(t){t=t.replace(/^No /,'').replace(/ in our dependency chain/,'').replace(/ with full coverage/,'');return t.length>28?t.slice(0,26)+'…':t;}
+
+function addNode(c){
+  var n={id:c.id,text:c.text,status:c.status,method:c.method,type:c.type,origin:c.origin,
+         impact:c.impact||1,confidence:c.confidence,evidence:c.evidence||[],
+         x:W/2+(Math.random()-0.5)*120,y:H/2+(Math.random()-0.5)*120,vx:0,vy:0};
+  n.g=el('g',{class:'gnode'});
+  n.ring=el('circle',{r:0,fill:'#fff','stroke-width':3});
+  n.core=el('circle',{r:0});
+  n.label=el('text',{});
+  n.g.appendChild(n.ring); n.g.appendChild(n.core); n.g.appendChild(n.label);
+  n.g.onclick=function(){showDetail(n);};
+  n.g.onmousedown=function(e){dragTarget=n;e.preventDefault();};
+  svg.appendChild(n.g);
+  byId[c.id]=n; nodes.push(n);
+  // grow-in animation
+  var r0=14+n.impact*4, r1=7+n.impact*2, t=0;
+  var grow=setInterval(function(){t+=0.12; var e=t>1?1:t;
+    n.ring.setAttribute('r',r0*e); n.core.setAttribute('r',r1*e);
+    if(t>=1)clearInterval(grow);},20);
+  updateNode(n);
 }
-async function go(){
-  const repo=$('repo').value.trim(); if(!repo) return;
-  $('btn').disabled=true; $('chips').style.display='flex'; $('log').innerHTML=''; runId=null;
-  t0=Date.now(); timer=setInterval(()=>{$('cw').textContent=Math.round((Date.now()-t0)/1000)+'s'},500);
-  const r=await fetch('/audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repo})});
-  const j=await r.json(); runId=j.run_id;
-  const es=new EventSource(`/runs/${runId}/events`);
-  es.onmessage=async e=>{
-    const ev=JSON.parse(e.data); logline(ev);
-    if(ev.kind==='claim_updated'||ev.kind==='claim_added') refresh();
-    if(ev.kind==='done'){es.close();clearInterval(timer);$('btn').disabled=false;refresh();}
-  };
-  es.onerror=()=>{clearInterval(timer);$('btn').disabled=false;};
+function updateNode(n){
+  var c=COL[n.status]||COL.unverified;
+  n.ring.setAttribute('stroke',c);
+  if(n.origin==='baseline')n.ring.setAttribute('stroke-dasharray','4,3');else n.ring.removeAttribute('stroke-dasharray');
+  n.core.setAttribute('fill',c);
+  n.label.setAttribute('x',18+n.impact*4); n.label.setAttribute('y',4);
+  n.label.textContent=shortLabel(n.text);
 }
+function tick(){
+  // simple force layout
+  for(var i=0;i<nodes.length;i++){
+    var a=nodes[i]; if(a===dragTarget)continue;
+    for(var j=0;j<nodes.length;j++){ if(i===j)continue; var b=nodes[j];
+      var dx=a.x-b.x,dy=a.y-b.y,d=Math.sqrt(dx*dx+dy*dy)||1;
+      if(d<160){var f=(160-d)/d*0.04; a.vx+=dx*f; a.vy+=dy*f;}
+    }
+    a.vx+=(W/2-a.x)*0.002; a.vy+=(H/2-a.y)*0.002; // gentle center pull
+  }
+  for(var k=0;k<links.length;k++){var l=links[k],s=byId[l.source],t=byId[l.target];if(!s||!t)continue;
+    var dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1,f=(d-95)/d*0.03;
+    if(s!==dragTarget){s.vx+=dx*f;s.vy+=dy*f;} if(t!==dragTarget){t.vx-=dx*f;t.vy-=dy*f;}
+  }
+  for(var m=0;m<nodes.length;m++){var n=nodes[m]; if(n===dragTarget)continue;
+    n.vx*=0.85; n.vy*=0.85; n.x+=n.vx; n.y+=n.vy;
+    n.x=Math.max(60,Math.min(W-60,n.x)); n.y=Math.max(30,Math.min(H-30,n.y));
+    n.g.setAttribute('transform','translate('+n.x+','+n.y+')');
+  }
+  for(var p=0;p<links.length;p++){var l=links[p],s=byId[l.source],t=byId[l.target];if(!s||!t||!l.line)continue;
+    l.line.setAttribute('x1',s.x);l.line.setAttribute('y1',s.y);l.line.setAttribute('x2',t.x);l.line.setAttribute('y2',t.y);}
+}
+function setLinks(edges){
+  edges.forEach(function(e){
+    var key=e.src+'-'+e.dst;
+    if(links.some(function(l){return l.key===key;}))return;
+    if(!byId[e.src]||!byId[e.dst])return;
+    var line=el('line',{stroke:e.rel==='contradicts'?'#fca5a5':'#cbd5e1','stroke-width':1.5});
+    if(e.rel==='contradicts')line.setAttribute('stroke-dasharray','4,3');
+    svg.insertBefore(line,svg.firstChild); // behind nodes
+    links.push({source:e.src,target:e.dst,rel:e.rel,line:line,key:key});
+  });
+}
+function showDetail(n){
+  var ev=(n.evidence&&n.evidence[0])||{};
+  var origin=n.origin==='baseline'?'SWARM baseline check':'extracted from README';
+  var body=ev.summary?('<pre>'+(ev.summary+(ev.detail?'\n\n'+ev.detail:'')).replace(/</g,'&lt;')+'</pre>'):'<div class="hint" style="position:static;padding:1rem">no evidence yet</div>';
+  $('detail').innerHTML='<span class="st '+n.status+'">'+n.status+'</span> · conf '+(n.confidence||0).toFixed(2)+' · '+n.method
+    +'<div style="margin:.4rem 0;font-weight:600">'+n.text+'</div>'
+    +'<div style="color:#64748B;font-size:.75rem">'+origin+' · '+n.type+'</div>'+body;
+}
+function poll(){
+  if(!runId)return Promise.resolve();
+  return fetch('/runs/'+runId+'/dossier').then(function(r){return r.json();}).then(function(d){
+    var s=d.summary||{};
+    $('cv').textContent='verified '+(s.verified||0); $('cr').textContent='refuted '+(s.refuted||0);
+    $('cu').textContent='unverifiable '+(s.unverifiable||0); $('ct').textContent=(d.total_tokens||0)+' tokens';
+    (d.claims||[]).forEach(function(c){ if(byId[c.id]){var n=byId[c.id];n.status=c.status;n.confidence=c.confidence;n.evidence=c.evidence||[];updateNode(n);} else {addNode(c);} });
+    setLinks(d.edges||[]);
+  }).catch(function(){});
+}
+function go(){
+  var repo=$('repo').value.trim(); if(!repo)return;
+  $('btn').disabled=true; $('chips').style.display='flex'; $('log').innerHTML='';
+  runId=null; initGraph();
+  t0=Date.now(); timer=setInterval(function(){$('cw').textContent=Math.round((Date.now()-t0)/1000)+'s';},400);
+  fetch('/audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repo:repo})})
+    .then(function(r){return r.json();}).then(function(j){
+      runId=j.run_id;
+      var es=new EventSource('/runs/'+runId+'/events');
+      es.onmessage=function(e){
+        var ev=JSON.parse(e.data);
+        var d=document.createElement('div');
+        d.innerHTML='<span class="k">'+ev.kind+'</span> '+(ev.claim||'')+' '+(ev.status||'')+' '+(ev.confidence==null?'':ev.confidence)+' '+(ev.method||'')+' '+(ev.note?('— '+ev.note):'');
+        $('log').insertBefore(d,$('log').firstChild);
+        poll();
+        if(ev.kind==='done'){es.close();clearInterval(timer);$('btn').disabled=false;poll();}
+      };
+      es.onerror=function(){clearInterval(timer);$('btn').disabled=false;};
+    });
+}
+$('btn').onclick=go;
+$('repo').addEventListener('keydown',function(e){if(e.key==='Enter')go();});
 </script></body></html>

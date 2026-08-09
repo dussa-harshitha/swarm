@@ -41,7 +41,7 @@ async def start_audit(req: AuditRequest):
         try:
             repo = clone(req.repo)
             llm = build_llm()
-            ctx = ActionContext(repo, llm)
+            ctx = ActionContext(repo, llm, graph=graph)
             await extract_claims(repo, llm, graph)
             inject_baseline(repo, graph)
             await run_audit(graph, ctx, Budget())
@@ -77,3 +77,4 @@ async def dossier(run_id: str):
 @app.get("/")
 async def index():
     return HTMLResponse((Path(__file__).parent / "static_index.html").read_text(encoding="utf-8"))
+

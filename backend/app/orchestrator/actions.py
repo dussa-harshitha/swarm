@@ -10,8 +10,9 @@ COST_RANK = {"license_check": 0, "maintenance_stats": 1, "license_compat": 2, "s
 REPO_GLOBAL = {"run_tests", "osv_lookup", "secret_scan", "sast_scan", "maintenance_stats", "license_compat"}
 
 class ActionContext:
-    def __init__(self, repo: Path, llm, http_client=None):
+    def __init__(self, repo: Path, llm, http_client=None, graph=None):
         self.repo, self.llm, self.http = repo, llm, http_client
+        self.graph = graph
         self.cache: dict[str, VerifyResult] = {}
 
 def _combined_sast(repo):
@@ -87,3 +88,4 @@ async def _execute(method: str, claim, ctx: ActionContext) -> VerifyResult:
         return VerifyResult("unverifiable", 0.5, f"No action registered for method '{method}'")
     except ToolMissing as e:
         return VerifyResult("unverifiable", 0.5, f"Required tool missing: {e}", kind="scan")
+
