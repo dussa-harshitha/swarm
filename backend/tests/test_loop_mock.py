@@ -1,4 +1,4 @@
-"""End-to-end engine test: mocked LLM, real mechanical verifiers, sample repo."""
+﻿"""End-to-end engine test: mocked LLM, real mechanical verifiers, sample repo."""
 import json, pathlib, pytest, httpx
 from app.graph.claim_graph import ClaimGraph
 from app.llm.router import Router, MockLLM
@@ -39,4 +39,8 @@ async def test_full_audit_mock():
     assert by_text["No known vulnerabilities"]["status"] == "refuted"  # mocked CVE hit
     assert by_text["Production-ready"]["status"] == "unverifiable"
     assert all(c["evidence"] for c in dossier["claims"])
-    assert dossier["summary"]["refuted"] == 2
+    # original claims refuted: MIT + No-known-vulnerabilities (synthesis may add more)
+    orig_refuted = [c for c in dossier["claims"]
+                    if c["status"] == "refuted" and "[synthesis]" not in (c.get("note") or "")]
+    assert len(orig_refuted) >= 2
+

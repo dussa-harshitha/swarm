@@ -2,6 +2,7 @@
 import json, shutil, subprocess, tempfile
 from pathlib import Path
 from .results import VerifyResult, ToolMissing
+from .triage import classify_findings, is_noncore
 
 def gitleaks_available() -> bool:
     return shutil.which("gitleaks") is not None
@@ -23,6 +24,15 @@ def scan_secrets(repo: Path) -> VerifyResult:
     if proc.returncode == 0 and not findings:
         return VerifyResult("verified", 0.9, "gitleaks: no secrets detected", kind="scan")
     if findings:
+        cls = classify_findings(findings, lambda x: x.get("File", ""))
         top = "; ".join(f"{x.get('RuleID')}@{x.get('File')}:{x.get('StartLine')}" for x in findings[:5])
-        return VerifyResult("refuted", 0.95, f"gitleaks found {len(findings)} potential secret(s)", detail=top, kind="scan")
+        # If EVERY hit is in test/example/docs code, it's very likely fixtures — down-weight, don't refute hard.
+        if cls["core_n"] == 0 and cls["noncore_n"] > 0:
+            return VerifyResult("unverifiable", 0.55,
+                f"gitleaks found {len(findings)} potential secret(s), ALL in test/example/docs paths "
+                f"(likely fixtures — review advised, not confirmed leaks)", detail=top, kind="scan")
+        # Otherwise refute, but say how many are core vs fixture so a human can triage.
+        note = f" ({cls['core_n']} in core source, {cls['noncore_n']} in test/example)" if cls["noncore_n"] else ""
+        return VerifyResult("refuted", 0.95,
+            f"gitleaks found {len(findings)} potential secret(s){note}", detail=top, kind="scan")
     return VerifyResult("unverifiable", 0.5, f"gitleaks errored: {proc.stderr[:300]}", kind="scan")

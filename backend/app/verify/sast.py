@@ -1,9 +1,10 @@
-﻿"""Static analysis via bandit (Python).
-Integrity rule: empty or unparseable scanner output is NEVER "clean" -
+"""Static analysis via bandit (Python).
+Integrity rule: empty or unparseable scanner output is NEVER "clean" —
 a scan that didn't demonstrably run yields "unverifiable", not "verified".
 """
 import json, subprocess, sys
 from pathlib import Path
+from .triage import classify_findings
 from .results import VerifyResult
 
 def bandit_scan(repo: Path) -> VerifyResult:
@@ -35,4 +36,10 @@ def bandit_scan(repo: Path) -> VerifyResult:
     if not high:
         return VerifyResult("verified", 0.7, f"bandit: only low-severity findings ({len(results)})", kind="scan")
     top = "; ".join(f"{r['test_id']}@{Path(r['filename']).name}:{r['line_number']}" for r in high[:5])
-    return VerifyResult("refuted", 0.8, f"bandit: {len(high)} medium/high finding(s)", detail=top, kind="scan")
+    cls = classify_findings(high, lambda r: r.get("filename", ""))
+    if cls["core_n"] == 0 and cls["noncore_n"] > 0:
+        return VerifyResult("unverifiable", 0.55,
+            f"bandit: {len(high)} finding(s), ALL in test/example paths (likely intentional test code)",
+            detail=top, kind="scan")
+    note = f" ({cls['core_n']} core, {cls['noncore_n']} test/example)" if cls["noncore_n"] else ""
+    return VerifyResult("refuted", 0.8, f"bandit: {len(high)} medium/high finding(s){note}", detail=top, kind="scan")
