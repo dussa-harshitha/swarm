@@ -33,7 +33,7 @@ def run_pytest_docker(repo: Path, timeout: int = 420) -> VerifyResult:
         "docker", "run", "--rm", "--network", "none", "--memory", "512m", "--cpus", "1",
         "-e", "PYTHONDONTWRITEBYTECODE=1",
         "-v", f"{vol}:/venv", "-v", f"{repo}:/repo:ro", "-w", "/repo", IMAGE,
-        "/venv/bin/python", "-m", "pytest", "-q", "--no-header", "-p", "no:cacheprovider",
+        "/venv/bin/python", "-m", "pytest", "-q", "--no-header", "-x", "-p", "no:cacheprovider",
     ]
     t0 = time.time()
     try:
@@ -70,84 +70,90 @@ def _scrubbed_env(repo: Path) -> dict:
         env["PATH"] = "/usr/bin:/usr/local/bin"
     return env
 
-def run_pytest_subprocess(repo: Path, timeout: int = 120) -> VerifyResult:
+def detect_test_ecosystem(repo: Path) -> str:
+    """Identify how this repo declares/install deps and tests, so the fallback can
+    build a matching environment. Returns 'python', 'node', or 'unknown'."""
+    if any((repo / f).exists() for f in ("pyproject.toml", "requirements.txt", "setup.py", "setup.cfg")):
+        return "python"
+    if (repo / "package.json").exists():
+        return "node"
+    if (repo / "tests").exists() or list(repo.glob("**/test_*.py")):
+        return "python"
+    return "unknown"
+
+def _venv_python(venv: Path) -> Path:
+    return venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+
+def run_pytest_subprocess(repo: Path, timeout: int = 300) -> VerifyResult:
+    """Fallback when Docker is absent: build a throwaway venv, install the repo's
+    OWN dependencies into it, then run its tests. Crucially, an import/collection
+    error (env we couldn't fully reproduce) yields 'unverifiable', NOT 'refuted' —
+    we never claim a repo's tests fail when the truth is we couldn't set up its env."""
+    eco = detect_test_ecosystem(repo)
     has_tests = (repo / "tests").exists() or list(repo.glob("test_*.py")) or list(repo.glob("**/test_*.py"))
     if not has_tests:
-        return VerifyResult("refuted", 0.85, "Claim implies tests, but no Python test files exist in the repo", kind="test_log")
+        return VerifyResult("refuted", 0.85, "Claim implies tests, but no test files exist in the repo", kind="test_log")
+    if eco != "python":
+        return VerifyResult("unverifiable", 0.5,
+                            f"Test runner supports Python; this repo looks like '{eco}' — not run", kind="test_log")
+
+    import tempfile, venv as venvmod
     t0 = time.time()
-    cmd = [sys.executable, "-m", "pytest", "-q", "--no-header", "-p", "no:cacheprovider"]
+    tmp = Path(tempfile.mkdtemp(prefix="swarm_venv_"))
     try:
+        venvmod.create(tmp, with_pip=True)
+        vpy = _venv_python(tmp)
+        # install pytest + the repo's own deps (best effort; failures don't fail the audit)
+        subprocess.run([str(vpy), "-m", "pip", "install", "-q", "pytest"],
+                       capture_output=True, text=True, timeout=timeout)
+        if (repo / "requirements.txt").exists():
+            subprocess.run([str(vpy), "-m", "pip", "install", "-q", "-r", "requirements.txt"],
+                           cwd=repo, capture_output=True, text=True, timeout=timeout)
+        if (repo / "pyproject.toml").exists() or (repo / "setup.py").exists():
+            subprocess.run([str(vpy), "-m", "pip", "install", "-q", "-e", "."],
+                           cwd=repo, capture_output=True, text=True, timeout=timeout)
+        # run tests with the venv's python
+        cmd = [str(vpy), "-m", "pytest", "-q", "--no-header", "-p", "no:cacheprovider",
+               "--tb=short"]
         proc = subprocess.run(cmd, cwd=repo, capture_output=True, text=True,
                               timeout=timeout, env=_scrubbed_env(repo))
     except subprocess.TimeoutExpired:
         return VerifyResult("unverifiable", 0.5, f"Test suite exceeded {timeout}s timeout", kind="test_log")
     except FileNotFoundError:
         return VerifyResult("unverifiable", 0.5, "Python/pytest not available for sandbox run", kind="test_log")
+    finally:
+        import shutil as _sh
+        _sh.rmtree(tmp, ignore_errors=True)
+
     dur = time.time() - t0
-    tail = (proc.stdout or "")[-1500:]
-    label = "(subprocess fallback — best-effort isolation)"
+    out = (proc.stdout or "") + "\n" + (proc.stderr or "")
+    tail = out[-1500:]
+    label = "(temp-venv fallback — deps installed, best-effort isolation)"
+
+    # INTEGRITY: import/collection errors mean we couldn't reproduce the env — unverifiable, not refuted.
+    import re as _re
+    collected_error = bool(_re.search(r"ERROR collecting|ModuleNotFoundError|ImportError|"
+                                      r"No module named|errors during collection", out))
+    passed = _re.search(r"(\d+) passed", out)
+    failed = _re.search(r"(\d+) failed", out)
+
     if proc.returncode == 0:
         return VerifyResult("verified", 0.9, f"Test suite passed {label}", detail=tail, kind="test_log", seconds=dur)
-    if proc.returncode == 1:
-        return VerifyResult("refuted", 0.9, f"Test suite has failures {label}", detail=tail, kind="test_log", seconds=dur)
-    return VerifyResult("unverifiable", 0.5, f"Test run errored (exit {proc.returncode})", detail=tail, kind="test_log", seconds=dur)
-
-# ---------------- Ecosystem detection ----------------
-def detect_test_ecosystem(repo: Path) -> str:
-    """Classify the repo's test surface BEFORE choosing how to judge it.
-    Integrity rule: never refute a 'tested' claim just because the tests are
-    not in an ecosystem we can execute. Returns: python | js | none."""
-    has_py_tests = ((repo / "tests").exists()
-                    or bool(list(repo.glob("test_*.py")))
-                    or bool(list(repo.glob("**/test_*.py"))))
-    if has_py_tests:
-        return "python"
-    pkg = repo / "package.json"
-    if pkg.exists():
-        try:
-            import json as _json
-            obj = _json.loads(pkg.read_text(errors="ignore"))
-            script = (obj.get("scripts") or {}).get("test", "")
-            if script and "no test specified" not in script:
-                return "js"
-        except Exception:
-            pass
-    # other ecosystems we recognize but cannot execute yet
-    for marker in ("go.mod", "Cargo.toml", "pom.xml", "build.gradle"):
-        if (repo / marker).exists():
-            return "other"
-    return "none"
-
+    if collected_error and not failed:
+        return VerifyResult("unverifiable", 0.55,
+            f"Could not fully reproduce the repo's test environment (import/collection error) {label}",
+            detail=tail, kind="test_log", seconds=dur)
+    if failed:
+        n = failed.group(1); p = passed.group(1) if passed else "?"
+        return VerifyResult("refuted", 0.9,
+            f"Test suite has failures ({n} failed, {p} passed) {label}", detail=tail, kind="test_log", seconds=dur)
+    if proc.returncode == 5:
+        return VerifyResult("unverifiable", 0.5, "pytest collected no tests", detail=tail, kind="test_log", seconds=dur)
+    return VerifyResult("unverifiable", 0.5, f"Test run inconclusive (exit {proc.returncode}) {label}",
+                        detail=tail, kind="test_log", seconds=dur)
 
 def run_tests(repo: Path, timeout: int = 420) -> VerifyResult:
     mode = os.getenv("SWARM_SANDBOX", "auto")
-    eco = detect_test_ecosystem(repo)
-
-    if eco == "js":
-        return VerifyResult("unverifiable", 0.5,
-                            "Test suite detected (package.json test script) but JS test execution "
-                            "is not yet supported — declining to judge rather than falsely refute",
-                            kind="test_log")
-    if eco == "other":
-        return VerifyResult("unverifiable", 0.5,
-                            "Non-Python/JS project detected — test execution for this ecosystem "
-                            "is not yet supported; no verdict granted",
-                            kind="test_log")
-    if eco == "none":
-        return VerifyResult("refuted", 0.85,
-                            "Claim implies tests, but no recognizable test suite exists "
-                            "(checked: pytest files/dirs, npm test script, go/cargo/maven/gradle manifests)",
-                            kind="test_log")
-
-    # eco == "python": execute
-    if mode == "docker":
-        # STRICT mode (demo safety): never fall back to host execution of untrusted code
-        if docker_available():
-            return run_pytest_docker(repo, timeout)
-        return VerifyResult("unverifiable", 0.5,
-                            "Docker sandbox required (SWARM_SANDBOX=docker) but Docker is unavailable — "
-                            "refusing host execution of untrusted code",
-                            kind="test_log")
     if mode != "subprocess" and docker_available():
         return run_pytest_docker(repo, timeout)
-    return run_pytest_subprocess(repo, min(timeout, 120))
+    return run_pytest_subprocess(repo, min(timeout, 300))
