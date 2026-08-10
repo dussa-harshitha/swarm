@@ -1,34 +1,14 @@
 {
-  "generated_at": 1786322192.9883819,
+  "generated_at": 1786323259.0274596,
   "summary": {
-    "refuted": 8,
-    "verified": 4
+    "verified": 9,
+    "unverifiable": 2,
+    "refuted": 5
   },
-  "total_tokens": 220,
+  "total_tokens": 701,
   "claims": [
     {
-      "id": "c_e577a7",
-      "text": "No known vulnerabilities in our dependency chain",
-      "type": "security",
-      "source": "README.md",
-      "method": "osv_lookup",
-      "status": "refuted",
-      "confidence": 0.95,
-      "evidence": [
-        {
-          "id": "ev_930d21",
-          "kind": "cve",
-          "summary": "OSV: 86 known vulnerability match(es) across 7 deps [poetry.lock (transitive) + package.json (direct)]",
-          "detail": "requests==2.19.0: GHSA-9hjg-9r4m-mvj7; requests==2.19.0: GHSA-9wx4-h78v-vm56; requests==2.19.0: GHSA-gc5v-m9x4-r6x2; requests==2.19.0: GHSA-j8r2-6x86-q33q; requests==2.19.0: GHSA-x84v-xcm2-53pg; requests==2.19.0: PYSEC-2018-28; requests==2.19.0: PYSEC-2023-74; requests==2.19.0: PYSEC-2026-1872; requests==2.19.0: PYSEC-2026-1873; requests==2.19.0: PYSEC-2026-2275\nFIX: requests -> 2.32.4 (GHSA-9hjg-9r4m-mvj7)\nFIX: requests -> 2.32.0 (GHSA-9wx4-h78v-vm56)\nFIX: requests -> 2.33.0 (GHSA-gc5v-m9x4-r6x2)\nFIX: requests -> 2.31.0 (GHSA-j8r2-6x86-q33q)\nFIX: requests -> 2.20.0 (GHSA-x84v-xcm2-53pg)",
-          "created_at": 1786322180.7427516
-        }
-      ],
-      "cost_tokens": 44,
-      "cost_seconds": 2.4995760917663574,
-      "note": ""
-    },
-    {
-      "id": "c_45f453",
+      "id": "c_a276b9",
       "text": "No medium/high-severity static-analysis findings",
       "type": "security",
       "source": "baseline-audit",
@@ -37,20 +17,20 @@
       "confidence": 0.8,
       "evidence": [
         {
-          "id": "ev_647c7e",
+          "id": "ev_b71c7b",
           "kind": "scan",
-          "summary": "bandit: bandit: 2 medium/high finding(s) | semgrep: semgrep: 9 high/medium finding(s) across languages",
-          "detail": "bandit: B602@paylite.py:9; B307@paylite.py:12 || semgrep: detected-aws-access-key-id-value@settings.py:2; detected-aws-secret-access-key@settings.py:3; subprocess-shell-true@paylite.py:9; eval-detected@paylite.py:12; eval-detected@server.js:5",
-          "created_at": 1786322178.24217
+          "summary": "bandit: bandit: 8 medium/high finding(s)",
+          "detail": "bandit: B307@cli.py:1023; B102@config.py:209; B704@tag.py:188; B324@sessions.py:281; B201@test_basic.py:1899",
+          "created_at": 1786323131.0797563
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 12.48978567123413,
+      "cost_seconds": 1.7115271091461182,
       "note": "[baseline]"
     },
     {
-      "id": "c_f505d1",
-      "text": "Systemic security risk: 3 independent security claims refuted (dependencies, code, and/or secrets all show problems)",
+      "id": "c_5bd32f",
+      "text": "Systemic security risk: 2 independent security claims refuted (dependencies, code, and/or secrets all show problems)",
       "type": "security",
       "source": "synthesis",
       "method": "synthesis",
@@ -58,11 +38,11 @@
       "confidence": 0.9,
       "evidence": [
         {
-          "id": "ev_077fe8",
+          "id": "ev_121a8e",
           "kind": "synthesis",
-          "summary": "Systemic security risk: 3 independent security claims refuted (dependencies, code, and/or secrets all show problems)",
+          "summary": "Systemic security risk: 2 independent security claims refuted (dependencies, code, and/or secrets all show problems)",
           "detail": "Derived by cross-claim synthesis over the resolved graph.",
-          "created_at": 1786322192.9873781
+          "created_at": 1786323259.0274596
         }
       ],
       "cost_tokens": 0,
@@ -70,7 +50,7 @@
       "note": "[synthesis] severity=high"
     },
     {
-      "id": "c_6b84a9",
+      "id": "c_6a74da",
       "text": "No secrets committed to the repository",
       "type": "security",
       "source": "baseline-audit",
@@ -79,184 +59,289 @@
       "confidence": 0.95,
       "evidence": [
         {
-          "id": "ev_4d24c4",
+          "id": "ev_2d60ca",
           "kind": "scan",
-          "summary": "gitleaks found 1 potential secret(s)",
-          "detail": "generic-api-key@C:/tmp/paylite/config/settings.py:3",
-          "created_at": 1786322165.7523844
+          "summary": "gitleaks found 6 potential secret(s)",
+          "detail": "generic-api-key@C:/Users/asus/AppData/Local/Temp/swarm_repo_fhakpq_1/docs/tutorial/deploy.rst:73; generic-api-key@C:/Users/asus/AppData/Local/Temp/swarm_repo_fhakpq_1/docs/config.rst:41; generic-api-key@C:/Users/asus/AppData/Local/Temp/swarm_repo_fhakpq_1/docs/config.rst:513; generic-api-key@C:/Users/asus/AppData/Local/Temp/swarm_repo_fhakpq_1/docs/config.rst:560; generic-api-key@C:/Users/asus/AppData/Local/Temp/swarm_repo_fhakpq_1/docs/config.rst:578",
+          "created_at": 1786323129.3682292
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 0.5446228981018066,
+      "cost_seconds": 0.8618922233581543,
       "note": "[baseline]"
     },
     {
-      "id": "c_d382c1",
-      "text": "Overall trust verdict: 5 of 7 extracted/baseline claims refuted \u00e2\u20ac\u201d this software's self-description is substantially inaccurate",
-      "type": "quality",
-      "source": "synthesis",
-      "method": "synthesis",
-      "status": "refuted",
-      "confidence": 0.9,
-      "evidence": [
-        {
-          "id": "ev_3c36c1",
-          "kind": "synthesis",
-          "summary": "Overall trust verdict: 5 of 7 extracted/baseline claims refuted \u00e2\u20ac\u201d this software's self-description is substantially inaccurate",
-          "detail": "Derived by cross-claim synthesis over the resolved graph.",
-          "created_at": 1786322192.9883819
-        }
-      ],
-      "cost_tokens": 0,
-      "cost_seconds": 0.0,
-      "note": "[synthesis] severity=high"
-    },
-    {
-      "id": "c_d2b284",
+      "id": "c_66e88d",
       "text": "Security findings are concentrated in non-core / example code",
       "type": "security",
-      "source": "investigation:c_45f453",
+      "source": "investigation:c_a276b9",
       "method": "sast_locality",
       "status": "refuted",
       "confidence": 0.75,
       "evidence": [
         {
-          "id": "ev_0b22e5",
+          "id": "ev_3984d3",
           "kind": "scan",
-          "summary": "7 of 7 findings are in core source files \u2014 production-relevant",
-          "detail": "Core files: paylite.py, server.js, settings.py",
-          "created_at": 1786322178.2431755
+          "summary": "4 of 5 findings are in core source files \u2014 production-relevant",
+          "detail": "Core files: cli.py, config.py, sessions.py, tag.py",
+          "created_at": 1786323131.0807571
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 0.001005411148071289,
+      "cost_seconds": 0.0,
       "note": "spawned: locate where the findings sit [investigation]"
     },
     {
-      "id": "c_7df577",
-      "text": "MIT licensed - free for commercial use",
-      "type": "license",
-      "source": "README.md",
-      "method": "license_check",
-      "status": "refuted",
-      "confidence": 0.92,
-      "evidence": [
-        {
-          "id": "ev_60f741",
-          "kind": "file_match",
-          "summary": "Claimed MIT but LICENSE is GPL-3.0",
-          "detail": "",
-          "created_at": 1786322180.7447464
-        }
-      ],
-      "cost_tokens": 44,
-      "cost_seconds": 0.0010001659393310547,
-      "note": "spdx=MIT"
-    },
-    {
-      "id": "c_da2e38",
-      "text": "Thoroughly tested with full coverage",
+      "id": "c_2fa020",
+      "text": "Test suite passes",
       "type": "quality",
-      "source": "README.md",
+      "source": "baseline-audit",
       "method": "run_tests",
       "status": "refuted",
       "confidence": 0.92,
       "evidence": [
         {
-          "id": "ev_5da245",
+          "id": "ev_8b283f",
           "kind": "test_log",
           "summary": "Test suite has failures (docker sandbox, network off)",
-          "detail": ".F                                                                       [100%]\n=================================== FAILURES ===================================\n____________________________ test_refund_supported _____________________________\n\n    def test_refund_supported():\n>       from paylite import refund   # planted: refund doesn't exist -> fails\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       ImportError: cannot import name 'refund' from 'paylite' (/repo/paylite.py)\n\ntests/test_paylite.py:9: ImportError\n=========================== short test summary info ============================\nFAILED tests/test_paylite.py::test_refund_supported - ImportError: cannot imp...\n1 failed, 1 passed in 0.14s\n",
-          "created_at": 1786322192.918394
+          "detail": "nc(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsrc/flask/app.py:1075: in ensure_sync\n    return self.async_to_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <Flask 'flask_test'>\nfunc = <function TestStreaming.test_async_view.<locals>.index at 0x74d011c70720>\n\n    def async_to_sync(\n        self, func: t.Callable[..., t.Coroutine[t.Any, t.Any, t.Any]]\n    ) -> t.Callable[..., t.Any]:\n        \"\"\"Return a sync function that will run the coroutine function.\n    \n        .. code-block:: python\n    \n            result = app.async_to_sync(func)(*args, **kwargs)\n    \n        Override this method to change how the app converts async code\n        to be synchronously callable.\n    \n        .. versionadded:: 2.0\n        \"\"\"\n        try:\n            from asgiref.sync import async_to_sync as asgiref_async_to_sync\n        except ImportError:\n>           raise RuntimeError(\n                \"Install Flask with the 'async' extra in order to use async views.\"\n            ) from None\nE           RuntimeError: Install Flask with the 'async' extra in order to use async views.\n\nsrc/flask/app.py:1096: RuntimeError\n=========================== short test summary info ============================\nFAILED tests/test_helpers.py::TestStreaming::test_async_view - RuntimeError: ...\n1 failed, 479 passed, 4 skipped in 9.15s\n",
+          "created_at": 1786323160.2890177
         }
       ],
-      "cost_tokens": 44,
-      "cost_seconds": 10.779971837997437,
-      "note": ""
+      "cost_tokens": 0,
+      "cost_seconds": 29.20725655555725,
+      "note": "[baseline]"
     },
     {
-      "id": "c_5a414b",
-      "text": "Fixed versions are available for the 15 vulnerable dependencies",
+      "id": "c_4fa351",
+      "text": "No known-vulnerable dependencies",
       "type": "security",
-      "source": "investigation:c_e577a7",
-      "method": "osv_fixes",
-      "status": "verified",
-      "confidence": 0.85,
+      "source": "baseline-audit",
+      "method": "osv_lookup",
+      "status": "unverifiable",
+      "confidence": 0.5,
       "evidence": [
         {
-          "id": "ev_ee0db0",
+          "id": "ev_4aa5d1",
           "kind": "cve",
-          "summary": "Patched releases confirmed for 5 of the flagged advisories \u2014 upgrading remediates",
-          "detail": "Remediation (from OSV fix ranges): requests -> 2.32.4 (GHSA-9hjg-9r4m-mvj7); requests -> 2.32.0 (GHSA-9wx4-h78v-vm56); requests -> 2.33.0 (GHSA-gc5v-m9x4-r6x2); requests -> 2.31.0 (GHSA-j8r2-6x86-q33q); requests -> 2.20.0 (GHSA-x84v-xcm2-53pg)",
-          "created_at": 1786322180.7437463
+          "summary": "No dependencies found to check",
+          "detail": "",
+          "created_at": 1786323131.0807571
         }
       ],
       "cost_tokens": 0,
       "cost_seconds": 0.0,
-      "note": "spawned: refuted CVE claim warrants remediation check [investigation]"
+      "note": "[baseline]"
     },
     {
-      "id": "c_0e44c6",
-      "text": "All dependency licenses are compatible with our MIT license",
+      "id": "c_436df3",
+      "text": "Dependency licenses are compatible with the project license",
       "type": "license",
-      "source": "README.md",
+      "source": "baseline-audit",
       "method": "license_compat",
-      "status": "verified",
-      "confidence": 0.8,
+      "status": "unverifiable",
+      "confidence": 0.5,
       "evidence": [
         {
-          "id": "ev_616fb6",
+          "id": "ev_4112d1",
           "kind": "scan",
-          "summary": "No license conflicts among 3 resolvable deps (project claims: GPL-3.0)",
+          "summary": "No declared dependencies to check licenses for",
           "detail": "",
-          "created_at": 1786322182.1384223
+          "created_at": 1786323131.0817611
         }
       ],
-      "cost_tokens": 44,
-      "cost_seconds": 1.3926823139190674,
-      "note": ""
+      "cost_tokens": 0,
+      "cost_seconds": 0.0,
+      "note": "spdx=BSD-3-Clause [baseline]"
     },
     {
-      "id": "c_43786b",
+      "id": "c_ec6065",
+      "text": "Declared license (BSD-3-Clause) matches the LICENSE file",
+      "type": "license",
+      "source": "baseline-audit",
+      "method": "license_check",
+      "status": "verified",
+      "confidence": 0.95,
+      "evidence": [
+        {
+          "id": "ev_59bd1e",
+          "kind": "file_match",
+          "summary": "LICENSE file matches claim: BSD-3-Clause",
+          "detail": "",
+          "created_at": 1786323131.0817611
+        }
+      ],
+      "cost_tokens": 0,
+      "cost_seconds": 0.0010039806365966797,
+      "note": "spdx=BSD-3-Clause [baseline]"
+    },
+    {
+      "id": "c_b0a91f",
       "text": "Test failures are isolated (not a broad breakage)",
       "type": "quality",
-      "source": "investigation:c_da2e38",
+      "source": "investigation:c_2fa020",
       "method": "test_failure_scope",
       "status": "verified",
       "confidence": 0.7,
       "evidence": [
         {
-          "id": "ev_03da12",
+          "id": "ev_15faf7",
           "kind": "test_log",
-          "summary": "Failures are limited (1 failed vs 1 passed) \u2014 isolated, not systemic",
+          "summary": "Failures are limited (1 failed vs 479 passed) \u2014 isolated, not systemic",
           "detail": "",
-          "created_at": 1786322192.918915
+          "created_at": 1786323160.2895458
         }
       ],
       "cost_tokens": 0,
-      "cost_seconds": 0.0005209445953369141,
+      "cost_seconds": 0.0,
       "note": "spawned: quantify blast radius of test failures [investigation]"
     },
     {
-      "id": "c_b42996",
-      "text": "Actively maintained by the PayLite team",
+      "id": "c_b7d6f7",
+      "text": "One of the most popular Python web application frameworks.",
+      "type": "quality",
+      "source": "README.md",
+      "method": "llm_critique",
+      "status": "verified",
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "id": "ev_c4412b",
+          "kind": "llm_critique",
+          "summary": "The pyproject.toml file lists Flask as a project with version 3.2.0.dev, classifiers indicating it is production stable, and dependencies on Werkzeug and Jinja which are core components of the Flask framework. This technical metadata independently verifies the claim. [LLM verdict, confidence capped]",
+          "detail": "",
+          "created_at": 1786323176.510197
+        }
+      ],
+      "cost_tokens": 107,
+      "cost_seconds": 16.220651149749756,
+      "note": ""
+    },
+    {
+      "id": "c_cc9b3e",
+      "text": "Many extensions provided by the community that make adding new functionality easy.",
+      "type": "quality",
+      "source": "README.md",
+      "method": "llm_critique",
+      "status": "verified",
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "id": "ev_119d01",
+          "kind": "llm_critique",
+          "summary": "The README and pyproject.toml files both explicitly mention that Flask offers suggestions but does not enforce dependencies, and there are many community extensions available to add functionality easily. The project layout is up to the developer. This directly supports the claim. [LLM verdict, confidence capped]",
+          "detail": "",
+          "created_at": 1786323192.5273964
+        }
+      ],
+      "cost_tokens": 102,
+      "cost_seconds": 16.016640424728394,
+      "note": ""
+    },
+    {
+      "id": "c_a502e8",
+      "text": "A lightweight WSGI web application framework",
+      "type": "functional",
+      "source": "README.md",
+      "method": "llm_critique",
+      "status": "verified",
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "id": "ev_e7c923",
+          "kind": "llm_critique",
+          "summary": "The README and pyproject.toml files both contain explicit statements that Flask is a lightweight WSGI web application framework, matching the claim verbatim. The pyproject.toml file also lists 'wsgi' in classifiers and explicitly includes required dependencies like Werkzeug (a WSGI library) which supports the technical truth of the claim. [LLM verdict, confidence capped]",
+          "detail": "",
+          "created_at": 1786323209.0049741
+        }
+      ],
+      "cost_tokens": 122,
+      "cost_seconds": 16.47703981399536,
+      "note": ""
+    },
+    {
+      "id": "c_325b8d",
+      "text": "Designed to make getting started quick and easy, with the ability to scale up to complex applications.",
+      "type": "functional",
+      "source": "README.md",
+      "method": "llm_critique",
+      "status": "verified",
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "id": "ev_22de87",
+          "kind": "llm_critique",
+          "summary": "The README and pyproject.toml files together provide independent technical evidence that Flask is designed to make getting started quick and easy (e.g. the simple example app), while also being able to scale up to complex applications (e.g. optional dependencies for async, dotenv, pre-commit, tests). The project layout with src/, examples/, tests/ directories further supports this claim. [LLM verdict, confidence capped]",
+          "detail": "",
+          "created_at": 1786323225.9170027
+        }
+      ],
+      "cost_tokens": 129,
+      "cost_seconds": 16.912028551101685,
+      "note": ""
+    },
+    {
+      "id": "c_2dacd5",
+      "text": "Begun as a simple wrapper around Werkzeug and Jinja",
       "type": "provenance",
       "source": "README.md",
+      "method": "llm_critique",
+      "status": "verified",
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "id": "ev_f18184",
+          "kind": "llm_critique",
+          "summary": "The project's pyproject.toml and file tree show that Flask was indeed started as a simple wrapper around Werkzeug (dependency listed in dependencies) and Jinja (another dependency). The README itself confirms this historical origin, but the technical evidence comes from the actual manifest files listing these core dependencies. [LLM verdict, confidence capped]",
+          "detail": "",
+          "created_at": 1786323242.3306468
+        }
+      ],
+      "cost_tokens": 113,
+      "cost_seconds": 16.34121823310852,
+      "note": ""
+    },
+    {
+      "id": "c_792075",
+      "text": "Offers suggestions, but doesn't enforce any dependencies or project layout.",
+      "type": "provenance",
+      "source": "README.md",
+      "method": "llm_critique",
+      "status": "verified",
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "id": "ev_3c8266",
+          "kind": "llm_critique",
+          "summary": "The pyproject.toml shows Flask does not enforce dependencies or project layout; it lists only required and optional dependencies without enforcing any structure. The `dev` group includes tools like ruff, tox, pre-commit which are used for development but not runtime. The `[tool.flit.sdist]` excludes docs/_build/ showing the build process is separate from distribution. [LLM verdict, confidence capped]",
+          "detail": "",
+          "created_at": 1786323259.0274596
+        }
+      ],
+      "cost_tokens": 128,
+      "cost_seconds": 16.696812868118286,
+      "note": ""
+    },
+    {
+      "id": "c_3c21ce",
+      "text": "Repository is actively maintained",
+      "type": "provenance",
+      "source": "baseline-audit",
       "method": "maintenance_stats",
       "status": "verified",
       "confidence": 0.85,
       "evidence": [
         {
-          "id": "ev_43b2cd",
+          "id": "ev_f40664",
           "kind": "scan",
           "summary": "Actively maintained",
-          "detail": "last commit 0d ago; 6 commits in 90d; 6 sampled",
-          "created_at": 1786322192.9873781
+          "detail": "last commit 10d ago; 10 commits in 90d; 200 sampled",
+          "created_at": 1786323225.988896
         }
       ],
-      "cost_tokens": 44,
-      "cost_seconds": 0.06846308708190918,
-      "note": ""
+      "cost_tokens": 0,
+      "cost_seconds": 0.07189321517944336,
+      "note": "[baseline]"
     }
   ]
 }
