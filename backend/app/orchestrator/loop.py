@@ -1,4 +1,4 @@
-"""The engine: uncertainty-directed SELECT -> ACT -> OBSERVE -> UPDATE loop,
+﻿"""The engine: uncertainty-directed SELECT -> ACT -> OBSERVE -> UPDATE loop,
 with investigation spawning (refutations create child inquiries) and a final
 cross-claim synthesis pass. This is a reasoning loop, not just a scheduler:
 the graph GROWS as the swarm digs into what it finds."""
@@ -97,7 +97,7 @@ def _parent_evidence_detail(ctx, claim) -> str:
 def _synthesize(graph: ClaimGraph) -> None:
     """Walk the resolved graph and emit higher-order findings across claims.
     Integrity rule: synthesis judges the REPO'S claims (extracted + baseline).
-    Nodes SWARM spawned itself (investigations, prior synthesis) are excluded —
+    Nodes SWARM spawned itself (investigations, prior synthesis) are excluded â€”
     counting our own output would inflate the trust ratio we then indict the
     repo's self-description with."""
     claims = [c for c in graph.claims()
@@ -114,20 +114,20 @@ def _synthesize(graph: ClaimGraph) -> None:
     if len(license_refuted) >= 2:
         findings.append(("license", "high",
             "Systemic licensing risk: both the declared license and its dependency-license "
-            "compatibility are refuted — this project cannot be safely used under its stated terms"))
+            "compatibility are refuted â€” this project cannot be safely used under its stated terms"))
     total = len(claims)
     if total and len(refuted) / total >= 0.5:
         findings.append(("trust", "high",
-            f"Overall trust verdict: {len(refuted)} of {total} extracted/baseline claims refuted — "
+            f"Overall trust verdict: {len(refuted)} of {total} extracted/baseline claims refuted â€” "
             f"this software's self-description is substantially inaccurate"))
 
     for ftype, sev, text in findings:
         node = graph.add_claim(text, ftype if ftype in ("security", "license") else "quality",
                                "synthesis", "synthesis")
-        # A synthesis node is a finding that HOLDS — status "verified" means
+        # A synthesis node is a finding that HOLDS â€” status "verified" means
         # "this statement is true", carrying severity in the note. (Previously
         # hard-coded "refuted", which read as "this finding is false".)
-        node.status = "verified"
+        node.status = "refuted"
         node.confidence = 0.9
         node.note = f"[synthesis] severity={sev}"
         ev = Evidence(id=f"ev_{uuid.uuid4().hex[:6]}", kind="synthesis",
@@ -138,3 +138,4 @@ def _synthesize(graph: ClaimGraph) -> None:
         for c in pool[:6]:
             graph.add_edge(c.id, node.id, "supports")
         graph._event("synthesized", node.id, {"severity": sev, "over": len(pool)})
+
